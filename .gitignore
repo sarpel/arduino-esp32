@@ -1,0 +1,23 @@
+# PlatformIO
+.pio/
+.vscode/
+*.tmp
+*.bak
+# Build artifacts
+.pioenvs/
+.piolibdeps/
+.clang_complete
+.gcc-flags.json
+google_inmp441_copy_20251018040039/
+# IDE files
+*.swp
+*.swo
+*~
+.github/
+# OS files
+.DS_Store
+Thumbs.db
+IMPLEMENTATION_COMPLETE.md
+# Logs
+*.log
+IMPROVEMENT.md
