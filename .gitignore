@@ -20,7 +20,7 @@ improvements_plan.md
 docs/
 .serena/
 test/
-.github/
+.github/workflows/
 .pio/
 .vscode/
 .pioenvs/
