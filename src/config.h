@@ -19,9 +19,13 @@
 // ===== Server Configuration =====
 #define SERVER_HOST ""
 #define SERVER_PORT 0
-#define SERVER_RECONNECT_MIN 5000  // milliseconds
-#define SERVER_RECONNECT_MAX 60000 // milliseconds
-#define TCP_WRITE_TIMEOUT 5000     // milliseconds
+#define SERVER_RECONNECT_MIN 5000   // milliseconds
+#define SERVER_RECONNECT_MAX 60000  // milliseconds
+#define SERVER_BACKOFF_JITTER_PCT 20 // percent jitter on backoff (0-100)
+#define TCP_WRITE_TIMEOUT 5000      // milliseconds
+
+// Optional: chunked TCP write size to avoid long blocking writes
+#define TCP_CHUNK_SIZE 1024         // bytes per write() chunk
 
 // ===== Board Detection =====
 #ifdef ARDUINO_SEEED_XIAO_ESP32S3
@@ -75,9 +79,11 @@
 
 // ===== Logger Configuration =====
 #define LOGGER_BUFFER_SIZE 256          // bytes - circular buffer for log messages
+#define LOGGER_MAX_LINES_PER_SEC 20     // rate limit to avoid log storms
+#define LOGGER_BURST_MAX 60             // maximum burst of logs allowed
 
 // ===== Watchdog Configuration =====
-#define WATCHDOG_TIMEOUT_SEC 10         // seconds - watchdog timeout (ESP32 feeds it in loop)
+#define WATCHDOG_TIMEOUT_SEC 60         // seconds - watchdog timeout (aligned with connection operations)
 
 // ===== Task Priorities =====
 #define TASK_PRIORITY_HIGH 5            // reserved for critical tasks
@@ -93,3 +99,4 @@
 #define DEBUG_LEVEL 3
 
 #endif // CONFIG_H
+

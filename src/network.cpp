@@ -3,6 +3,7 @@
 #include "esp_task_wdt.h"
 #include <lwip/sockets.h>
 #include <lwip/netdb.h>
+#include <sys/time.h>
 
 // ExponentialBackoff implementation
 ExponentialBackoff::ExponentialBackoff(unsigned long min_ms, unsigned long max_ms)
@@ -103,9 +104,14 @@ void NetworkManager::handleWiFiConnection() {
     wifi_retry_count++;
 
     if (wifi_retry_count > WIFI_MAX_RETRIES) {
-        LOG_CRITICAL("WiFi connection failed after %d attempts - rebooting", WIFI_MAX_RETRIES);
-        delay(1000);
-        ESP.restart();
+        // Enter safe backoff mode instead of rebooting; keep serial alive
+        unsigned long backoff = 1000UL * (wifi_retry_count - WIFI_MAX_RETRIES);
+        if (backoff > 30000UL) backoff = 30000UL;
+        LOG_CRITICAL("WiFi connection failed after %d attempts - backing off %lu ms (no reboot)", WIFI_MAX_RETRIES, backoff);
+        wifi_retry_timer.setInterval(backoff);
+        wifi_retry_timer.start();
+        wifi_retry_count = WIFI_MAX_RETRIES; // clamp to avoid overflow
+        return;
     }
 }
 
@@ -123,9 +129,8 @@ void NetworkManager::monitorWiFiQuality() {
     AdaptiveBuffer::updateBufferSize(rssi);
 
     if (rssi < RSSI_WEAK_THRESHOLD) {
-        LOG_WARN("Weak WiFi signal: %d dBm - triggering preemptive reconnection", rssi);
-        WiFi.disconnect();
-        WiFi.reconnect();
+        LOG_WARN("Weak WiFi signal: %d dBm - increasing buffer, avoiding forced disconnect", rssi);
+        // No forced disconnect; rely on natural link loss and adaptive buffering
     } else if (rssi < -70) {
         LOG_WARN("WiFi signal degraded: %d dBm", rssi);
     }
@@ -164,16 +169,22 @@ bool NetworkManager::connectToServer() {
         int sockfd = client.fd();
         if (sockfd >= 0) {
             int keepAlive = 1;
-            int keepIdle = 5;      // Start probing after 5s idle
-            int keepInterval = 5;  // Probe every 5s
-            int keepCount = 3;     // Drop after 3 failed probes
+            int keepIdle = TCP_KEEPALIVE_IDLE;      // seconds
+            int keepInterval = TCP_KEEPALIVE_INTERVAL;  // seconds
+            int keepCount = TCP_KEEPALIVE_COUNT;     // count
 
             setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &keepAlive, sizeof(keepAlive));
             setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPIDLE, &keepIdle, sizeof(keepIdle));
             setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPINTVL, &keepInterval, sizeof(keepInterval));
             setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPCNT, &keepCount, sizeof(keepCount));
 
-            LOG_DEBUG("TCP keepalive configured");
+            // Set send timeout to avoid indefinite blocking writes
+            struct timeval snd_to;
+            snd_to.tv_sec = TCP_WRITE_TIMEOUT / 1000;
+            snd_to.tv_usec = (TCP_WRITE_TIMEOUT % 1000) * 1000;
+            setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &snd_to, sizeof(snd_to));
+
+            LOG_DEBUG("TCP keepalive and send timeout configured");
         }
 
         return true;
@@ -228,18 +239,19 @@ bool NetworkManager::writeData(const uint8_t* data, size_t length) {
         return false;
     }
 
+    // Attempt write; Arduino WiFiClient.write is non-blocking per chunk but may block overall; rely on SO_SNDTIMEO
     size_t bytes_sent = client.write(data, length);
 
     if (bytes_sent == length) {
         last_successful_write = millis();
         return true;
     } else {
-        LOG_ERROR("TCP write incomplete: sent %u of %u bytes", bytes_sent, length);
+        LOG_ERROR("TCP write incomplete: sent %u of %u bytes", (unsigned)bytes_sent, (unsigned)length);
 
         // Handle write error
         handleTCPError("writeData");
 
-        // Check for write timeout
+        // Close connection if no successful write within timeout window
         if (millis() - last_successful_write > TCP_WRITE_TIMEOUT) {
             LOG_ERROR("TCP write timeout - closing stale connection");
             disconnectFromServer();
