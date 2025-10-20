@@ -2,8 +2,11 @@
 #define CONFIG_H
 
 // ===== WiFi Configuration =====
-#define WIFI_SSID ""
-#define WIFI_PASSWORD ""
+#define WIFI_SSID "YOUR_WIFI_SSID"
+#define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
+
+// Compile-time check: fail if placeholders are not replaced
+#if (WIFI_SSID[0] == 'Y' && WIFI_SSID[1] == 'O' && WIFI_SSID[2] == 'U') || \
 #define WIFI_RETRY_DELAY 500 // milliseconds
 #define WIFI_MAX_RETRIES 20
 #define WIFI_TIMEOUT 30000 // milliseconds
