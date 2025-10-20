@@ -72,7 +72,10 @@ struct SystemStats {
         LOG_INFO("Data sent: %llu bytes (%.2f MB)", total_bytes_sent, total_bytes_sent / 1048576.0);
         LOG_INFO("WiFi reconnects: %u", NetworkManager::getWiFiReconnectCount());
         LOG_INFO("Server reconnects: %u", NetworkManager::getServerReconnectCount());
-        LOG_INFO("I2S errors: %u", i2s_errors);
+        LOG_INFO("I2S errors: %u (total: %u, transient: %u, permanent: %u)",
+                 i2s_errors, I2SAudio::getErrorCount(),
+                 I2SAudio::getTransientErrorCount(),
+                 I2SAudio::getPermanentErrorCount());
         LOG_INFO("TCP errors: %u", NetworkManager::getTCPErrorCount());
 
         // Memory statistics
