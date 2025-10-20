@@ -6,6 +6,7 @@
 #include "StateManager.h"
 #include "NonBlockingTimer.h"
 #include "config_validator.h"
+#include "serial_command.h"
 #include "esp_task_wdt.h"
 
 // ===== Function Declarations =====
@@ -205,6 +206,9 @@ void setup() {
     // Initialize network
     NetworkManager::initialize();
 
+    // Initialize serial command handler
+    SerialCommandHandler::initialize();
+
     // Start memory and stats timers
     memoryCheckTimer.start();
     statsPrintTimer.start();
@@ -219,6 +223,9 @@ void setup() {
 void loop() {
     // Feed watchdog timer
     esp_task_wdt_reset();
+
+    // Process serial commands (non-blocking)
+    SerialCommandHandler::processCommands();
 
     // Handle WiFi connection (non-blocking)
     NetworkManager::handleWiFiConnection();

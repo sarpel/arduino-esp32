@@ -5,6 +5,16 @@
 #include <WiFi.h>
 #include "config.h"
 #include "NonBlockingTimer.h"
+#include "adaptive_buffer.h"
+
+// TCP Connection states
+enum class TCPConnectionState {
+    DISCONNECTED,    // Not connected, ready for new attempt
+    CONNECTING,      // Connection attempt in progress
+    CONNECTED,       // Active connection (data can flow)
+    ERROR,           // Connection error detected
+    CLOSING          // Graceful disconnect in progress
+};
 
 // Exponential backoff for reconnection attempts
 class ExponentialBackoff {
@@ -31,11 +41,23 @@ public:
     static bool isWiFiConnected();
     static void monitorWiFiQuality();
 
+    // Adaptive buffer management
+    static void updateAdaptiveBuffer();
+    static size_t getAdaptiveBufferSize();
+
     // Server connection management
     static bool connectToServer();
     static void disconnectFromServer();
     static bool isServerConnected();
     static WiFiClient& getClient();
+
+    // TCP connection state management
+    static TCPConnectionState getTCPState();
+    static bool isTCPConnecting();
+    static bool isTCPConnected();
+    static bool isTCPError();
+    static unsigned long getTimeSinceLastWrite();
+    static unsigned long getConnectionUptime();
 
     // TCP write with timeout detection
     static bool writeData(const uint8_t* data, size_t length);
@@ -44,8 +66,20 @@ public:
     static uint32_t getWiFiReconnectCount();
     static uint32_t getServerReconnectCount();
     static uint32_t getTCPErrorCount();
+    static uint32_t getTCPStateChangeCount();
 
 private:
+    // Connection state tracking
+    static TCPConnectionState tcp_state;
+    static unsigned long tcp_state_change_time;
+    static unsigned long tcp_connection_established_time;
+    static uint32_t tcp_state_changes;
+    
+    // Error recovery
+    static void handleTCPError(const char* error_source);
+    static void updateTCPState(TCPConnectionState new_state);
+    static bool validateConnection();
+    
     static bool server_connected;
     static unsigned long last_successful_write;
     static NonBlockingTimer wifi_retry_timer;

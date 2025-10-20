@@ -1,24 +1,29 @@
-# PlatformIO
-.pio/
-.vscode/
 *.tmp
 *.bak
-# Build artifacts
-.pioenvs/
-.piolibdeps/
-.clang_complete
-.gcc-flags.json
-google_inmp441_copy_20251018040039/
-# IDE files
 *.swp
 *.swo
 *~
-.github/
-# OS files
-.DS_Store
-Thumbs.db
-IMPLEMENTATION_COMPLETE.md
-# Logs
 *.log
+.DS_Store
+.clang_complete
+.gcc-flags.json
+
+Thumbs.db
+
 IMPROVEMENT.md
+IMPLEMENTATION_COMPLETE.md
+IMPLEMENTATION_SUMMARY.md
+PHASE2_IMPLEMENTATION_COMPLETE.md
+PHASE3_IMPLEMENTATION_COMPLETE.md
+improvements_plan.md
+
 docs/
+.serena/
+test/
+.github/
+.pio/
+.vscode/
+.pioenvs/
+.piolibdeps/
+ino/
+build/
