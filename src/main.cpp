@@ -5,6 +5,7 @@
 #include "network.h"
 #include "StateManager.h"
 #include "NonBlockingTimer.h"
+#include "config_validator.h"
 #include "esp_task_wdt.h"
 
 // ===== Function Declarations =====
@@ -20,14 +21,52 @@ struct SystemStats {
     uint32_t i2s_errors;
     unsigned long uptime_start;
 
+    // Memory tracking for leak detection
+    uint32_t peak_heap;
+    uint32_t min_heap;
+    uint32_t last_heap;
+    unsigned long last_memory_check;
+    int32_t heap_trend;  // +1 = increasing, -1 = decreasing, 0 = stable
+
     void init() {
         total_bytes_sent = 0;
         i2s_errors = 0;
         uptime_start = millis();
+
+        uint32_t current_heap = ESP.getFreeHeap();
+        peak_heap = current_heap;
+        min_heap = current_heap;
+        last_heap = current_heap;
+        last_memory_check = millis();
+        heap_trend = 0;
+    }
+
+    void updateMemoryStats() {
+        uint32_t current_heap = ESP.getFreeHeap();
+
+        // Update peak and minimum
+        if (current_heap > peak_heap) peak_heap = current_heap;
+        if (current_heap < min_heap) min_heap = current_heap;
+
+        // Detect heap trend (potential memory leak)
+        if (current_heap < last_heap - 1000) {
+            heap_trend = -1;  // Decreasing - potential leak
+        } else if (current_heap > last_heap + 1000) {
+            heap_trend = 1;   // Increasing - memory recovered
+        } else {
+            heap_trend = 0;   // Stable
+        }
+
+        last_heap = current_heap;
+        last_memory_check = millis();
     }
 
     void printStats() {
+        updateMemoryStats();  // Update memory trend before printing
+
         unsigned long uptime_sec = (millis() - uptime_start) / 1000;
+        uint32_t current_heap = ESP.getFreeHeap();
+
         LOG_INFO("=== System Statistics ===");
         LOG_INFO("Uptime: %lu seconds (%.1f hours)", uptime_sec, uptime_sec / 3600.0);
         LOG_INFO("Data sent: %llu bytes (%.2f MB)", total_bytes_sent, total_bytes_sent / 1048576.0);
@@ -35,7 +74,23 @@ struct SystemStats {
         LOG_INFO("Server reconnects: %u", NetworkManager::getServerReconnectCount());
         LOG_INFO("I2S errors: %u", i2s_errors);
         LOG_INFO("TCP errors: %u", NetworkManager::getTCPErrorCount());
-        LOG_INFO("Free heap: %u bytes", ESP.getFreeHeap());
+
+        // Memory statistics
+        LOG_INFO("--- Memory Statistics ---");
+        LOG_INFO("Current heap: %u bytes", current_heap);
+        LOG_INFO("Peak heap: %u bytes", peak_heap);
+        LOG_INFO("Min heap: %u bytes", min_heap);
+        LOG_INFO("Heap range: %u bytes", peak_heap - min_heap);
+
+        // Detect potential memory leak
+        if (heap_trend == -1) {
+            LOG_WARN("Memory trend: DECREASING (potential leak)");
+        } else if (heap_trend == 1) {
+            LOG_INFO("Memory trend: INCREASING (recovered)");
+        } else {
+            LOG_INFO("Memory trend: STABLE");
+        }
+
         LOG_INFO("========================");
     }
 } stats;
@@ -47,6 +102,9 @@ NonBlockingTimer statsPrintTimer(STATS_PRINT_INTERVAL, true);
 // ===== Memory Monitoring =====
 void checkMemoryHealth() {
     if (!memoryCheckTimer.check()) return;
+
+    // Update memory tracking statistics
+    stats.updateMemoryStats();
 
     uint32_t free_heap = ESP.getFreeHeap();
 
@@ -60,6 +118,11 @@ void checkMemoryHealth() {
         }
     } else if (free_heap < MEMORY_WARN_THRESHOLD) {
         LOG_WARN("Memory low: %u bytes", free_heap);
+    }
+
+    // Warn about potential memory leak
+    if (stats.heap_trend == -1) {
+        LOG_WARN("Memory usage trending downward (potential leak detected)");
     }
 }
 
@@ -83,7 +146,7 @@ void gracefulShutdown() {
     if (NetworkManager::isServerConnected()) {
         LOG_INFO("Closing server connection...");
         NetworkManager::disconnectFromServer();
-        delay(100);
+        delay(GRACEFUL_SHUTDOWN_DELAY);
     }
 
     // Stop I2S audio
@@ -93,7 +156,7 @@ void gracefulShutdown() {
     // Disconnect WiFi
     LOG_INFO("Disconnecting WiFi...");
     WiFi.disconnect(true);
-    delay(100);
+    delay(GRACEFUL_SHUTDOWN_DELAY);
 
     LOG_INFO("Shutdown complete. Ready for restart.");
     delay(1000);
@@ -105,11 +168,23 @@ void setup() {
     Logger::init(LOG_INFO);
     LOG_INFO("========================================");
     LOG_INFO("ESP32 Audio Streamer Starting Up");
+    LOG_INFO("Board: %s", BOARD_NAME);
     LOG_INFO("Version: 2.0 (Reliability-Enhanced)");
     LOG_INFO("========================================");
 
     // Initialize statistics
     stats.init();
+
+    // Validate configuration before proceeding
+    if (!ConfigValidator::validateAll()) {
+        LOG_CRITICAL("Configuration validation failed - cannot start system");
+        LOG_CRITICAL("Please check config.h and fix the issues listed above");
+        systemState.setState(SystemState::ERROR);
+        while (1) {
+            delay(ERROR_RECOVERY_DELAY);
+            LOG_CRITICAL("Waiting for configuration fix...");
+        }
+    }
 
     // Initialize state manager with callback
     systemState.onStateChange(onStateChange);
@@ -224,7 +299,7 @@ void loop() {
                 }
 
                 // Small delay to allow background tasks
-                delay(1);
+                delay(TASK_YIELD_DELAY);
             }
             break;
 
@@ -235,7 +310,7 @@ void loop() {
 
         case SystemState::ERROR:
             LOG_ERROR("System in error state - attempting recovery...");
-            delay(5000);
+            delay(ERROR_RECOVERY_DELAY);
 
             // Try to recover
             NetworkManager::disconnectFromServer();
@@ -245,7 +320,7 @@ void loop() {
         case SystemState::MAINTENANCE:
             // Reserved for future use (e.g., firmware updates)
             LOG_INFO("System in maintenance mode");
-            delay(1000);
+            delay(ERROR_RECOVERY_DELAY);
             break;
     }
 }
