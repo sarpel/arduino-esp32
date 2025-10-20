@@ -7,7 +7,7 @@
 .DS_Store
 .clang_complete
 .gcc-flags.json
-
+lxc-services/
 Thumbs.db
 arduino-esp32.7z
 IMPROVEMENT.md
@@ -16,7 +16,6 @@ IMPLEMENTATION_SUMMARY.md
 PHASE2_IMPLEMENTATION_COMPLETE.md
 PHASE3_IMPLEMENTATION_COMPLETE.md
 improvements_plan.md
-
 docs/
 .serena/
 test/

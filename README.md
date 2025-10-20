@@ -1,369 +1,263 @@
-# ESP32 Audio Streamer v2.0
+# ESP32 Audio Streamer v2.0 - Quick Start Guide
 
 **Professional-grade I2S audio streaming system for ESP32 with comprehensive reliability features.**
 
-[![Build Status](https://img.shields.io/badge/build-SUCCESS-brightgreen)](README.md)
-[![RAM Usage](https://img.shields.io/badge/RAM-15.0%25-blue)](README.md)
-[![Flash Usage](https://img.shields.io/badge/Flash-59.3%25-blue)](README.md)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Build Status](https://img.shields.io/badge/build-SUCCESS-brightgreen)](#)
+[![RAM Usage](https://img.shields.io/badge/RAM-15.0%25-blue)](#)
+[![Flash Usage](https://img.shields.io/badge/Flash-59.6%25-blue)](#)
+[![License](https://img.shields.io/badge/license-MIT-green)](#)
 
 ---
 
-## Overview
+## 📚 Documentation Structure
 
-The ESP32 Audio Streamer is a robust, production-ready system for streaming high-quality audio from an INMP441 I2S microphone to a TCP server over WiFi. Designed with reliability, error recovery, and adaptive optimization in mind.
+This project now uses **3 consolidated documentation files**:
 
-**Key Characteristics:**
-- 16kHz, 16-bit mono audio acquisition
-- ~256 Kbps streaming rate (32 KB/sec)
-- Automatic error detection and recovery
-- Adaptive resource management based on signal strength
-- Real-time system monitoring and control via serial commands
-- Comprehensive diagnostics and troubleshooting
+1. **README.md** (this file) - Quick Start & Overview
+2. **DEVELOPMENT.md** - Complete Technical Reference
+3. **TROUBLESHOOTING.md** - Diagnostics & Solutions
 
 ---
 
-## Features
-
-### 🎯 Core Functionality
-✅ **I2S Audio Acquisition** - Digital audio input from INMP441 microphone
-✅ **WiFi Connectivity** - Automatic reconnection with exponential backoff
-✅ **TCP Streaming** - Reliable data transmission to remote server
-✅ **State Machine** - Explicit system state management with clear transitions
-
-### 🛡️ Reliability Features
-✅ **Configuration Validation** - Startup verification of all critical parameters
-✅ **Error Classification** - Intelligent error categorization (transient/permanent/fatal)
-✅ **Memory Leak Detection** - Automatic heap trend monitoring
-✅ **TCP State Machine** - Explicit connection state tracking with validation
-✅ **Health Checks** - Real-time system health scoring
-
-### 🚀 Performance Optimization
-✅ **Adaptive Buffering** - Dynamic buffer sizing based on WiFi signal strength
-✅ **Exponential Backoff** - Intelligent retry strategy for connection failures
-✅ **Watchdog Timer** - Hardware watchdog with timeout validation
-✅ **Non-blocking Operations** - Responsive main loop with configurable task yielding
-
-### 🔧 System Control & Monitoring
-✅ **Serial Command Interface** - 8 runtime commands for system control
-✅ **Real-time Statistics** - Comprehensive system metrics every 5 minutes
-✅ **Health Monitoring** - Visual status indicators and diagnostic output
-✅ **Debug Modes** - 6 configurable debug levels (production to verbose)
-
----
-
-## Quick Start
+## 🚀 Quick Start
 
 ### Requirements
+
 - **Hardware**: ESP32-DevKit or Seeed XIAO ESP32-S3
 - **Microphone**: INMP441 I2S digital microphone
 - **Tools**: PlatformIO IDE or CLI
-- **Server**: TCP server listening on configured host:port
+- **Server**: TCP server listening on port 9000
 
-### Installation
+### Hardware Connections
 
-1. **Clone or download the project**
+**ESP32-DevKit:**
+
+```
+INMP441 Pin → ESP32 Pin
+  CLK      → GPIO 14
+  WS       → GPIO 15
+  SD       → GPIO 32
+  GND      → GND
+  VCC      → 3V3
+```
+
+**Seeed XIAO ESP32-S3:**
+
+```
+INMP441 Pin → XIAO Pin
+  CLK      → GPIO 2
+  WS       → GPIO 3
+  SD       → GPIO 9
+  GND      → GND
+  VCC      → 3V3
+```
+
+### Installation & Configuration
+
+1. **Clone the project**
+
    ```bash
+   git clone <repo>
    cd arduino-esp32
    ```
 
-2. **Configure WiFi and Server** - Edit `src/config.h`:
+2. **Edit `src/config.h`** with your settings:
+
    ```cpp
-   #define WIFI_SSID "YourWiFiNetwork"
+   // WiFi
+   #define WIFI_SSID "YourNetwork"
    #define WIFI_PASSWORD "YourPassword"
-   #define SERVER_HOST "192.168.1.100"
-   #define SERVER_PORT 9000
+
+   // Server
+   #define SERVER_HOST "192.168.1.50"  // Your server IP
+   #define SERVER_PORT 9000            // TCP port
    ```
 
-3. **Build the project**
+3. **Upload firmware**
+
    ```bash
-   pio run
+   pio run --target upload --upload-port COM8
    ```
 
-4. **Upload to ESP32**
+4. **Monitor serial output**
    ```bash
-   pio run --target upload
+   pio device monitor --port COM8 --baud 115200
    ```
 
-5. **Monitor output**
-   ```bash
-   pio device monitor --baud 115200
-   ```
+### Expected Output
 
----
-
-## Hardware Setup
-
-### Pinout - ESP32-DevKit
-
-| Signal | Pin | Description |
-|--------|-----|-------------|
-| I2S_WS | GPIO15 | Word Select / LRCLK |
-| I2S_SD | GPIO32 | Serial Data (microphone input) |
-| I2S_SCK | GPIO14 | Serial Clock / BCLK |
-| GND | GND | Ground |
-| 3V3 | 3V3 | Power supply |
-
-### Pinout - Seeed XIAO ESP32-S3
-
-| Signal | Pin | Description |
-|--------|-----|-------------|
-| I2S_WS | GPIO3 | Word Select / LRCLK |
-| I2S_SD | GPIO9 | Serial Data (microphone input) |
-| I2S_SCK | GPIO2 | Serial Clock / BCLK |
-| GND | GND | Ground |
-| 3V3 | 3V3 | Power supply |
-
----
-
-## Serial Commands
-
-Access the system via serial terminal (115200 baud):
-
-| Command | Function |
-|---------|----------|
-| `STATUS` | Show WiFi, TCP, memory, and system state |
-| `STATS` | Display detailed system statistics |
-| `HEALTH` | Perform system health check with indicators |
-| `CONFIG SHOW` | Display all configuration parameters |
-| `CONNECT` | Manually attempt to connect to server |
-| `DISCONNECT` | Manually disconnect from server |
-| `RESTART` | Restart the system |
-| `HELP` | Show all available commands |
-
-Example output:
 ```
-> STATUS
-WiFi: CONNECTED (192.168.1.100)
-WiFi Signal: -65 dBm
-TCP State: CONNECTED
-Server: audio.server.com:9000
-System State: CONNECTED
-Free Memory: 65536 bytes
-WiFi Reconnects: 2
-Server Reconnects: 1
-TCP Errors: 0
+[INFO] ESP32 Audio Streamer Starting Up
+[INFO] WiFi connected - IP: 192.168.1.19
+[INFO] Attempting to connect to server 192.168.1.50:9000 (attempt 1)...
+[INFO] Server connection established
+[INFO] Starting audio transmission: first chunk is 19200 bytes
 ```
 
 ---
 
-## Configuration
+## 🎯 Core Features
 
-### Essential Parameters (`src/config.h`)
+### Streaming
 
-```cpp
-// WiFi Configuration
-#define WIFI_SSID ""                    // Your WiFi network
-#define WIFI_PASSWORD ""                // Your WiFi password
-
-// Server Configuration
-#define SERVER_HOST ""                  // Server IP or hostname
-#define SERVER_PORT 0                   // Server port (1-65535)
-
-// Audio Configuration
-#define I2S_SAMPLE_RATE 16000           // Audio sample rate (Hz)
-#define I2S_BUFFER_SIZE 4096            // Buffer size (bytes)
-
-// Memory Thresholds
-#define MEMORY_WARN_THRESHOLD 40000     // Low memory warning (bytes)
-#define MEMORY_CRITICAL_THRESHOLD 20000 // Critical level (bytes)
-
-// Debug Configuration
-#define DEBUG_LEVEL 3                   // 0=OFF, 3=INFO, 5=VERBOSE
-```
-
-See `CONFIGURATION_GUIDE.md` for detailed parameter descriptions.
-
----
-
-## System Architecture
-
-### State Machine
-
-```
-INITIALIZING
-    ↓
-CONNECTING_WIFI
-    ↓ (success)
-CONNECTING_SERVER
-    ↓ (success)
-CONNECTED ← main streaming state
-    ↓ (WiFi lost or connection error)
-ERROR
-    ↓ (recovery attempt)
-CONNECTING_WIFI (retry)
-```
-
-### Key Components
-
-| Component | Purpose |
-|-----------|---------|
-| `I2SAudio` | I2S audio acquisition with error classification |
-| `NetworkManager` | WiFi and TCP with state machine |
-| `ConfigValidator` | Startup configuration validation |
-| `SerialCommandHandler` | Real-time serial commands |
-| `AdaptiveBuffer` | Dynamic buffer sizing by signal strength |
-| `RuntimeDebugContext` | Runtime-configurable debug output |
-
----
-
-## Performance Metrics
-
-### Build Profile
-```
-RAM:   15.0% (49,224 / 327,680 bytes)
-Flash: 59.3% (777,461 / 1,310,720 bytes)
-Build time: ~6 seconds
-Warnings: 0 | Errors: 0
-```
-
-### Audio Format
 - **Sample Rate**: 16 kHz
 - **Bit Depth**: 16-bit
-- **Channels**: Mono (left channel)
-- **Format**: Raw PCM, little-endian
-- **Bitrate**: ~256 Kbps (32 KB/sec)
+- **Channels**: Mono (1-channel)
+- **Bitrate**: ~256 Kbps (~32 KB/sec)
+- **Chunk Size**: 19200 bytes per TCP write (600ms of audio)
+
+### Reliability
+
+- ✅ WiFi auto-reconnect with exponential backoff
+- ✅ TCP connection state machine
+- ✅ Transient vs permanent error classification
+- ✅ Automatic I2S reinitialization on failure
+- ✅ Memory leak detection via heap trending
+- ✅ Hardware watchdog timer (60 seconds)
+
+### Control & Monitoring
+
+- ✅ 8 Serial commands for runtime control
+- ✅ Real-time statistics every 5 minutes
+- ✅ 6 configurable debug levels
+- ✅ System health monitoring
 
 ---
 
-## Documentation
+## � Common Tasks
 
-| Document | Purpose |
-|----------|---------|
-| `CONFIGURATION_GUIDE.md` | All 40+ parameters with recommended values |
-| `TROUBLESHOOTING.md` | Solutions for 30+ common issues |
-| `ERROR_HANDLING.md` | Error classification and recovery flows |
-| `IMPLEMENTATION_SUMMARY.md` | Phase 1 implementation details |
-| `PHASE2_IMPLEMENTATION_COMPLETE.md` | Phase 2: I2S error handling |
-| `PHASE3_IMPLEMENTATION_COMPLETE.md` | Phase 3: TCP state machine, commands, debug, buffer, tests |
-| `test_framework.md` | Unit testing architecture |
-
----
-
-## Testing
-
-### Build Verification
-```bash
-pio run                    # Build for ESP32-Dev
-pio run -e seeed_xiao_esp32s3  # Build for XIAO S3
-```
-
-### Unit Tests
-```bash
-pio test                   # Run all tests
-pio test -f test_adaptive_buffer  # Run specific test
-```
-
----
-
-## Troubleshooting
-
-### Common Issues
-
-**"WiFi connection timeout"**
-- Check WIFI_SSID and WIFI_PASSWORD
-- Verify WiFi signal strength
-- See `TROUBLESHOOTING.md` for detailed steps
-
-**"Server connection failed"**
-- Verify SERVER_HOST and SERVER_PORT
-- Check firewall settings
-- Ensure server is running
-- See `TROUBLESHOOTING.md`
-
-**"I2S read errors"**
-- Verify microphone wiring
-- Check I2S pins for conflicts
-- Verify power supply stability
-- See `TROUBLESHOOTING.md`
-
-**"Memory low warnings"**
-- Monitor via `STATS` command
-- Check for leaks via `HEALTH` command
-- See `TROUBLESHOOTING.md`
-
----
-
-## Project Structure
+### Check System Status
 
 ```
-arduino-esp32/
-├── src/
-│   ├── config.h                    # Configuration constants
-│   ├── main.cpp                    # Main application
-│   ├── i2s_audio.h/cpp            # I2S + error classification
-│   ├── network.h/cpp              # WiFi + TCP + state machine
-│   ├── serial_command.h/cpp       # Serial commands
-│   ├── debug_mode.h/cpp           # Debug configuration
-│   ├── adaptive_buffer.h/cpp      # Buffer management
-│   └── ... (other components)
-│
-├── test/
-│   └── test_adaptive_buffer.cpp   # Unit tests
-│
-├── platformio.ini                  # Build configuration
-├── README.md                        # This file
-├── CONFIGURATION_GUIDE.md           # Configuration help
-├── TROUBLESHOOTING.md              # Problem solving
-└── ERROR_HANDLING.md               # Error reference
+Send serial command: STATS
+Response: Current uptime, bytes sent, error counts, memory stats
+```
+
+### Change Debug Level
+
+```
+Send serial command: DEBUG 4
+(0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG, 5=VERBOSE)
+```
+
+### View WiFi Signal Strength
+
+```
+Send serial command: SIGNAL
+Response: Current RSSI in dBm
+```
+
+### Force Server Reconnect
+
+```
+Send serial command: RECONNECT
+```
+
+### View All Commands
+
+```
+Send serial command: HELP
 ```
 
 ---
 
-## Production Deployment
+## 📊 System Architecture
 
-### Pre-deployment Checklist
-- [ ] WiFi credentials configured
-- [ ] Server host and port correct
-- [ ] I2S pins verified for your hardware
-- [ ] Debug level set to 0 or 1
-- [ ] All tests passing
-- [ ] Build successful with zero warnings
-- [ ] Serial commands responding
-- [ ] Statistics printing every 5 minutes
+```
+┌─────────────┐      ┌──────────────┐      ┌──────────────┐
+│  I2S Audio  │─────→│  Adaptive    │─────→│  WiFi/TCP    │
+│  Input      │      │  Buffer      │      │  Network     │
+│  (16kHz)    │      │  (adaptive)  │      │  Manager     │
+└─────────────┘      └──────────────┘      └──────────────┘
+       ↑                                            ↓
+  INMP441                                    Server (TCP)
+  Microphone                                 Port 9000
 
-### Monitoring in Production
-```bash
-# Check every 5 minutes
-STATS   # View statistics
-HEALTH  # System health check
-STATUS  # Current state
+┌────────────────────────────────────────────────────────┐
+│              State Machine (main loop)                  │
+├────────────────────────────────────────────────────────┤
+│ INITIALIZING → CONNECTING_WIFI → CONNECTING_SERVER   │
+│                                  ↓                     │
+│                            CONNECTED → (loops)         │
+│                                  ↓                     │
+│                           (error?) → ERROR state       │
+└────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Version History
+## 📋 Serial Command Reference
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 2.0 | Oct 20, 2025 | Phase 3: State machine, commands, debug, buffer, tests |
-| 2.0 | Oct 20, 2025 | Phase 2: Enhanced I2S error handling |
-| 2.0 | Oct 20, 2025 | Phase 1: Config validation, documentation, memory detection |
-
----
-
-## Project Status
-
-**Status**: ✅ **PRODUCTION-READY**
-
-- ✅ All 14 planned improvements implemented
-- ✅ Comprehensive error handling
-- ✅ Extensive documentation
-- ✅ Unit test framework
-- ✅ Zero build warnings/errors
-- ✅ Tested on multiple boards
+```
+HELP              - Show all available commands
+STATS             - Print system statistics (uptime, bytes sent, memory, errors)
+STATUS            - Print current system state
+SIGNAL            - Print WiFi RSSI (signal strength) in dBm
+DEBUG [0-5]       - Set debug level (0=OFF, 5=VERBOSE)
+RECONNECT         - Force server reconnection
+REBOOT            - Restart the ESP32
+```
 
 ---
 
-## Support
+## 🐛 Quick Troubleshooting
 
-1. Check `TROUBLESHOOTING.md` for common issues
-2. Review `CONFIGURATION_GUIDE.md` for parameter help
-3. See `ERROR_HANDLING.md` for error explanations
-4. Use `HELP` serial command for available commands
+**ESP32 won't connect to WiFi?**
+
+- Verify WiFi credentials in `config.h`
+- Ensure network is 2.4 GHz (not 5 GHz)
+
+**Server connection timeout?**
+
+- Check `SERVER_HOST` matches actual server IP
+- Verify server is listening: `ss -tuln | grep 9000`
+- Check firewall allows port 9000
+
+**No audio streaming?**
+
+- Verify I2S pins match your board
+- Check microphone connections
+- Send `STATS` command to see error count
+
+**For detailed help**, see `TROUBLESHOOTING.md`.
 
 ---
 
-**Last Updated**: October 20, 2025
-**Build Status**: SUCCESS ✓
-**License**: MIT
+## 📦 Configuration Parameters
+
+See `src/config.h` for complete reference:
+
+- WiFi: SSID, password, retry settings
+- Server: Host, port, reconnect backoff
+- I2S: Sample rate (16kHz), buffer sizes
+- Safety: Memory thresholds, watchdog timeout
+- Debug: Log level (0-5)
+
+---
+
+## 🔄 Recent Updates
+
+**October 21, 2025** - Connection Startup Bug Fix
+
+- Fixed 5-second startup delay before first server connection
+- Added `startExpired()` method to NonBlockingTimer
+- Server connections now attempt immediately after WiFi
+
+**October 20, 2025** - Protocol Alignment Complete
+
+- TCP socket options verified and aligned
+- Data format: 16kHz, 16-bit, mono ✓
+- Chunk size: 19200 bytes ✓
+- Full server/client compatibility ✓
+
+---
+
+## 📖 For More Information
+
+- **Complete Technical Reference** → `DEVELOPMENT.md`
+- **Troubleshooting & Diagnostics** → `TROUBLESHOOTING.md`
+- **Source Code** → `src/` directory
+
+---
+
+**Status**: ✅ Production Ready | **Last Updated**: October 21, 2025 | **Version**: 2.0

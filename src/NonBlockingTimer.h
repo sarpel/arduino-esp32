@@ -3,7 +3,8 @@
 
 #include <Arduino.h>
 
-class NonBlockingTimer {
+class NonBlockingTimer
+{
 private:
     unsigned long previousMillis;
     unsigned long interval;
@@ -11,34 +12,51 @@ private:
     bool autoReset;
 
 public:
-    NonBlockingTimer(unsigned long intervalMs = 1000, bool autoResetEnabled = true) 
+    NonBlockingTimer(unsigned long intervalMs = 1000, bool autoResetEnabled = true)
         : previousMillis(0), interval(intervalMs), isRunning(false), autoReset(autoResetEnabled) {}
 
-    void setInterval(unsigned long intervalMs) {
+    void setInterval(unsigned long intervalMs)
+    {
         interval = intervalMs;
     }
 
-    void start() {
+    void start()
+    {
         previousMillis = millis();
         isRunning = true;
     }
 
-    void stop() {
+    void startExpired()
+    {
+        // Start timer in already-expired state for immediate first trigger
+        previousMillis = millis() - interval - 1;
+        isRunning = true;
+    }
+
+    void stop()
+    {
         isRunning = false;
     }
 
-    void reset() {
+    void reset()
+    {
         previousMillis = millis();
     }
 
-    bool check() {
-        if (!isRunning) return false;
-        
+    bool check()
+    {
+        if (!isRunning)
+            return false;
+
         unsigned long currentMillis = millis();
-        if (currentMillis - previousMillis >= interval) {
-            if (autoReset) {
+        if (currentMillis - previousMillis >= interval)
+        {
+            if (autoReset)
+            {
                 previousMillis = currentMillis;
-            } else {
+            }
+            else
+            {
                 isRunning = false;
             }
             return true;
@@ -46,25 +64,31 @@ public:
         return false;
     }
 
-    bool isExpired() {
-        if (!isRunning) return false;
+    bool isExpired()
+    {
+        if (!isRunning)
+            return false;
         return (millis() - previousMillis >= interval);
     }
 
-    unsigned long getElapsed() {
+    unsigned long getElapsed()
+    {
         return millis() - previousMillis;
     }
 
-    unsigned long getRemaining() {
+    unsigned long getRemaining()
+    {
         unsigned long elapsed = getElapsed();
         return (elapsed >= interval) ? 0 : (interval - elapsed);
     }
 
-    bool getIsRunning() const {
+    bool getIsRunning() const
+    {
         return isRunning;
     }
 
-    unsigned long getInterval() const {
+    unsigned long getInterval() const
+    {
         return interval;
     }
 };
