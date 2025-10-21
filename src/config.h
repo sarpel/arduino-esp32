@@ -2,6 +2,20 @@
 #define CONFIG_H
 
 // ===== WiFi Configuration =====
+
+// WARNING: Do NOT commit real WiFi credentials to version control!
+// This file contains placeholder values. For real deployments, create a 'config_local.h'
+// file with your actual credentials, and add 'config_local.h' to your .gitignore.
+// Example:
+//   #define WIFI_SSID "your-ssid"
+//   #define WIFI_PASSWORD "your-password"
+//
+// To override these values, you can include 'config_local.h' below:
+#ifdef __has_include
+#  if __has_include("config_local.h")
+#    include "config_local.h"
+#  endif
+#endif
 #define WIFI_SSID "SSID NAME"
 #define WIFI_PASSWORD "WIFI PASSWORD"
 #define WIFI_RETRY_DELAY 500 // milliseconds
