@@ -213,114 +213,132 @@ void SystemManager::run() {
     
     cycle_start_time = millis();
     
-    // Main system loop
-    while (system_running) {
-        // Feed watchdog
-        esp_task_wdt_reset();
-        
-        // Check for emergency stop
-        if (emergency_stop) {
-            logger->critical( "SystemManager", "Emergency stop activated");
-            emergencyShutdown();
-            break;
-        }
-        
-        // Update system context
-        updateContext();
-        
-        // Perform health checks
-        performHealthChecks();
-        
-        // Process events
-        event_bus->processEvents();
-        
-        // Update components based on current state
-        switch (state_machine->getCurrentState()) {
-            case SystemState::INITIALIZING:
-                // Should not reach here after initialization
-                state_machine->setState(SystemState::CONNECTING_WIFI);
-                break;
-                
-            case SystemState::CONNECTING_WIFI:
-                network_manager->handleWiFiConnection();
-                if (network_manager->isWiFiConnected()) {
-                    state_machine->setState(SystemState::CONNECTING_SERVER);
-                }
-                break;
-                
-            case SystemState::CONNECTING_SERVER:
-                if (!network_manager->isWiFiConnected()) {
-                    state_machine->setState(SystemState::CONNECTING_WIFI);
-                    break;
-                }
-                
-                if (network_manager->connectToServer()) {
-                    state_machine->setState(SystemState::CONNECTED);
-                }
-                break;
-                
-            case SystemState::CONNECTED:
-                if (!network_manager->isWiFiConnected()) {
-                    state_machine->setState(SystemState::CONNECTING_WIFI);
-                    break;
-                }
-                
-                if (!network_manager->isServerConnected()) {
-                    state_machine->setState(SystemState::CONNECTING_SERVER);
-                    break;
-                }
-                
-                // Process audio streaming
-                {
-                    static uint8_t audio_buffer[I2S_BUFFER_SIZE];
-                    size_t bytes_read = 0;
-                    
-                    if (audio_processor->readData(audio_buffer, I2S_BUFFER_SIZE, &bytes_read)) {
-                        context.audio_samples_processed += bytes_read / 2;  // 16-bit samples
-                        
-                        if (network_manager->writeData(audio_buffer, bytes_read)) {
-                            context.bytes_sent += bytes_read;
-                        } else {
-                            // Network write failed
-                            state_machine->setState(SystemState::CONNECTING_SERVER);
-                        }
-                    } else {
-                        // Audio read failed
-                        context.audio_errors++;
-                        if (context.audio_errors > MAX_CONSECUTIVE_FAILURES) {
-                            logger->error( "SystemManager", "Too many audio errors - reinitializing");
-                            audio_processor->reinitialize();
-                            context.audio_errors = 0;
-                        }
-                    }
-                }
-                break;
-                
-            case SystemState::ERROR:
-                handleErrors();
-                break;
-                
-            case SystemState::MAINTENANCE:
-                // Reserved for future use
-                delay(ERROR_RECOVERY_DELAY);
-                break;
-                
-            case SystemState::DISCONNECTED:
-                state_machine->setState(SystemState::CONNECTING_SERVER);
-                break;
-        }
-        
-        // Maintain timing - ensure consistent loop frequency
-        unsigned long cycle_time = millis() - cycle_start_time;
-        if (cycle_time < CYCLE_TIME_MS) {
-            delay(CYCLE_TIME_MS - cycle_time);
-        }
-        
-        cycle_start_time = millis();
-        context.cycle_count++;
+    // Feed watchdog
+    esp_task_wdt_reset();
+    
+    // Check for emergency stop
+    if (emergency_stop) {
+        logger->critical( "SystemManager", "Emergency stop activated");
+        emergencyShutdown();
+        return;
     }
     
-    logger->info( "SystemManager", "Main loop terminated");
+    // Check for state timeout
+    SystemState current_state = state_machine->getCurrentState();
+    uint32_t state_timeout = getStateTimeout(current_state);
+    uint32_t state_duration = state_machine->getStateDuration();
+    
+    if (state_timeout > 0 && state_duration > state_timeout) {
+        logger->warn( "SystemManager", "State timeout detected");
+        logger->info( "SystemManager", "Current state: %s, Duration: %lu ms, Timeout: %lu ms",
+                     state_machine->getCurrentStateName().c_str(), state_duration, state_timeout);
+        
+        // Log diagnostic information
+        logger->info( "SystemManager", "Memory: Free=%lu bytes, CPU=%f%%",
+                     context.free_memory, context.cpu_load_percent);
+        logger->info( "SystemManager", "Network: WiFi=%s, Server=%s, RSSI=%d",
+                     network_manager->isWiFiConnected() ? "connected" : "disconnected",
+                     network_manager->isServerConnected() ? "connected" : "disconnected",
+                     context.wifi_rssi);
+        logger->info( "SystemManager", "Errors: Total=%u, Recovered=%u, Fatal=%u",
+                     context.total_errors, context.recovered_errors, context.fatal_errors);
+        
+        // Transition to ERROR state for timeout
+        state_machine->setState(SystemState::ERROR, StateTransitionReason::TIMEOUT);
+    }
+    
+    // Update system context
+    updateContext();
+    
+    // Perform health checks
+    performHealthChecks();
+    
+    // Process events
+    event_bus->processEvents();
+    
+    // Update components based on current state
+    switch (state_machine->getCurrentState()) {
+        case SystemState::INITIALIZING:
+            // Should not reach here after initialization
+            state_machine->setState(SystemState::CONNECTING_WIFI);
+            break;
+            
+        case SystemState::CONNECTING_WIFI:
+            network_manager->handleWiFiConnection();
+            if (network_manager->isWiFiConnected()) {
+                state_machine->setState(SystemState::CONNECTING_SERVER);
+            }
+            break;
+            
+        case SystemState::CONNECTING_SERVER:
+            if (!network_manager->isWiFiConnected()) {
+                state_machine->setState(SystemState::CONNECTING_WIFI);
+                break;
+            }
+            
+            if (network_manager->connectToServer()) {
+                state_machine->setState(SystemState::CONNECTED);
+            }
+            break;
+            
+        case SystemState::CONNECTED:
+            if (!network_manager->isWiFiConnected()) {
+                state_machine->setState(SystemState::CONNECTING_WIFI);
+                break;
+            }
+            
+            if (!network_manager->isServerConnected()) {
+                state_machine->setState(SystemState::CONNECTING_SERVER);
+                break;
+            }
+            
+            // Process audio streaming
+            {
+                static uint8_t audio_buffer[I2S_BUFFER_SIZE];
+                size_t bytes_read = 0;
+                
+                if (audio_processor->readData(audio_buffer, I2S_BUFFER_SIZE, &bytes_read)) {
+                    context.audio_samples_processed += bytes_read / 2;  // 16-bit samples
+                    
+                    if (network_manager->writeData(audio_buffer, bytes_read)) {
+                        context.bytes_sent += bytes_read;
+                    } else {
+                        // Network write failed
+                        state_machine->setState(SystemState::CONNECTING_SERVER);
+                    }
+                } else {
+                    // Audio read failed
+                    context.audio_errors++;
+                    if (context.audio_errors > MAX_CONSECUTIVE_FAILURES) {
+                        logger->error( "SystemManager", "Too many audio errors - reinitializing");
+                        audio_processor->reinitialize();
+                        context.audio_errors = 0;
+                    }
+                }
+            }
+            break;
+            
+        case SystemState::ERROR:
+            handleErrors();
+            break;
+            
+        case SystemState::MAINTENANCE:
+            // Reserved for future use
+            delay(ERROR_RECOVERY_DELAY);
+            break;
+            
+        case SystemState::DISCONNECTED:
+            state_machine->setState(SystemState::CONNECTING_SERVER);
+            break;
+    }
+    
+    // Maintain timing - ensure consistent loop frequency
+    unsigned long cycle_time = millis() - cycle_start_time;
+    if (cycle_time < CYCLE_TIME_MS) {
+        delay(CYCLE_TIME_MS - cycle_time);
+    }
+    
+    context.cycle_count++;
 }
 
 void SystemManager::updateContext() {
@@ -370,6 +388,28 @@ void SystemManager::updateTemperature() {
     #endif
 }
 
+
+uint32_t SystemManager::getStateTimeout(SystemState state) const {
+    switch (state) {
+        case SystemState::INITIALIZING:
+            return INITIALIZING_TIMEOUT_MS;
+        case SystemState::CONNECTING_WIFI:
+            return WIFI_CONNECT_TIMEOUT_MS;
+        case SystemState::CONNECTING_SERVER:
+            return SERVER_CONNECT_TIMEOUT_MS;
+        case SystemState::CONNECTED:
+            return 0;  // No timeout for CONNECTED state
+        case SystemState::DISCONNECTED:
+            return 0;  // No timeout for DISCONNECTED state
+        case SystemState::ERROR:
+            return ERROR_RECOVERY_TIMEOUT_MS;
+        case SystemState::MAINTENANCE:
+            return 60000;  // 60 seconds for maintenance
+        default:
+            return 30000;  // Default 30 second timeout
+    }
+}
+
 void SystemManager::performHealthChecks() {
     if (!health_monitor) return;
     
@@ -381,11 +421,19 @@ void SystemManager::performHealthChecks() {
     
     if (health_status.memory_pressure > 0.9f) {
         event_bus->publish(SystemEvent::MEMORY_CRITICAL, &health_status);
+        // Trigger recovery on critical memory pressure
+        if (!health_monitor->canAutoRecover() && 
+            health_status.status == HealthStatus::CRITICAL) {
+            health_monitor->initiateRecovery();
+        }
     }
     
     if (health_status.cpu_load_percent > 0.9f) {
         event_bus->publish(SystemEvent::CPU_OVERLOAD, &health_status);
     }
+    
+    // Execute one step of recovery if in progress (non-blocking)
+    health_monitor->attemptRecovery();
 }
 
 void SystemManager::handleSystemEvent(SystemEvent event, const void* data) {

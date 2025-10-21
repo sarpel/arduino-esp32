@@ -50,12 +50,23 @@
 
 ## 📚 Documentation Structure
 
-This project uses **4 consolidated documentation files**:
+This project provides **comprehensive documentation** organized by audience:
 
-1. **README.md** (this file) - Quick Start & New Features
-2. **IMPROVEMENT_PLAN.md** - Comprehensive Enhancement Roadmap  
-3. **DEVELOPMENT.md** - Complete Technical Reference
-4. **TROUBLESHOOTING.md** - Diagnostics & Solutions
+### For Everyone
+- **README.md** (this file) - Quick start and feature overview
+
+### For Operators/Users
+- **OPERATOR_GUIDE.md** - Daily operations, monitoring, and alerting
+- **RELIABILITY_GUIDE.md** - Reliability features, diagnostics, troubleshooting
+
+### For Developers/DevOps
+- **CONFIGURATION_GUIDE.md** - Complete configuration reference
+- **TECHNICAL_REFERENCE.md** - System architecture and specifications
+- **DEVELOPMENT.md** (if available) - Development guidelines
+
+### Extended Resources
+- **IMPROVEMENT_PLAN.md** - Enhancement roadmap (if available)
+- **TROUBLESHOOTING.md** - Extended diagnostics (if available)
 
 ---
 

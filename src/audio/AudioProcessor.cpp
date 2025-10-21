@@ -369,8 +369,8 @@ bool AudioProcessor::initialize() {
         return false;
     }
     
-    // Allocate processing buffer
-    processing_buffer_size = I2S_BUFFER_SIZE / 2;  // 16-bit samples
+    // Allocate processing buffer - reduced size for ESP32 constraints
+    processing_buffer_size = I2S_BUFFER_SIZE / 2;  // 16-bit samples = 2048
     processing_buffer = new float[processing_buffer_size];
     if (!processing_buffer) {
         if (logger) {
@@ -395,9 +395,9 @@ bool AudioProcessor::initialize() {
         vad->initialize();
     }
 
-    // Initialize audio buffers
-    input_buffer = std::unique_ptr<AudioBuffer>(new AudioBuffer(processing_buffer_size * 4));
-    output_buffer = std::unique_ptr<AudioBuffer>(new AudioBuffer(processing_buffer_size * 4));
+    // Initialize audio buffers with minimal sizing for ESP32 constraints (reduce from *4 to *1)
+    input_buffer = std::unique_ptr<AudioBuffer>(new AudioBuffer(processing_buffer_size));
+    output_buffer = std::unique_ptr<AudioBuffer>(new AudioBuffer(processing_buffer_size));
     
     initialized = true;
     processing_enabled = true;

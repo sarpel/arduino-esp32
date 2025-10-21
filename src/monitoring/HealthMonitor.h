@@ -15,6 +15,15 @@ enum class HealthStatus {
     CRITICAL = 4
 };
 
+// Recovery phase tracking
+enum class RecoveryPhase {
+    RECOVERY_IDLE = 0,
+    RECOVERY_CLEANUP = 1,
+    RECOVERY_DEFRAG = 2,
+    RECOVERY_RETRY = 3,
+    RECOVERY_FAILED = 4
+};
+
 // System health metrics
 struct SystemHealth {
     float overall_score;           // 0.0 to 1.0
@@ -94,11 +103,19 @@ private:
         float network_critical;
         float audio_critical;
         float temperature_critical;
-        
-        HealthThresholds() : cpu_critical(90.0f), memory_critical(0.9f), 
-                           network_critical(0.3f), audio_critical(0.5f), 
+
+        HealthThresholds() : cpu_critical(90.0f), memory_critical(0.9f),
+                           network_critical(0.3f), audio_critical(0.5f),
                            temperature_critical(80.0f) {}
     } thresholds;
+
+    // Recovery state tracking
+    RecoveryPhase recovery_phase;
+    uint32_t recovery_attempt_count;
+    unsigned long last_recovery_attempt;
+    static constexpr uint32_t MAX_RECOVERY_ATTEMPTS = 3;
+    static constexpr uint32_t RECOVERY_RETRY_DELAY_MS = 5000;  // 5 second exponential backoff base
+    uint32_t next_recovery_delay_ms;
     
     // Internal methods
     void initializeHealthChecks();
@@ -143,7 +160,8 @@ public:
     void enableAutoRecovery(bool enable) { auto_recovery_enabled = enable; }
     bool isAutoRecoveryEnabled() const { return auto_recovery_enabled; }
     bool canAutoRecover() const;
-    void attemptRecovery();
+    void initiateRecovery();  // Start the recovery process
+    void attemptRecovery();   // Execute one step of recovery (non-blocking)
     
     // Thresholds
     void setThresholds(const HealthThresholds& new_thresholds) { thresholds = new_thresholds; }

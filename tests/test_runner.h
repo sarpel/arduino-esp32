@@ -34,6 +34,45 @@ extern void test_wifi_network_priority(void);
 extern void test_network_manager_add_wifi_networks(void);
 extern void test_network_stability_score(void);
 
+// Reliability Components Tests
+extern void test_multi_wifi_manager_init(void);
+extern void test_multi_wifi_manager_add_networks_with_priority(void);
+extern void test_multi_wifi_manager_priority_sorting(void);
+extern void test_multi_wifi_manager_clear(void);
+extern void test_network_quality_monitor_init(void);
+extern void test_network_quality_rssi_monitoring(void);
+extern void test_network_quality_score_computation(void);
+extern void test_connection_pool_init(void);
+extern void test_connection_pool_add_connection(void);
+extern void test_connection_pool_failover(void);
+extern void test_adaptive_reconnection_strategy(void);
+extern void test_adaptive_reconnection_exponential_backoff(void);
+
+extern void test_health_monitor_init(void);
+extern void test_health_monitor_score_computation(void);
+extern void test_health_monitor_component_weights(void);
+
+extern void test_circuit_breaker_init(void);
+extern void test_circuit_breaker_state_transitions(void);
+extern void test_circuit_breaker_recovery(void);
+extern void test_degradation_manager_mode_transitions(void);
+extern void test_degradation_manager_feature_control(void);
+extern void test_state_serializer_init(void);
+extern void test_state_serializer_roundtrip(void);
+extern void test_auto_recovery_failure_classification(void);
+
+extern void test_telemetry_collector_init(void);
+extern void test_telemetry_collector_event_collection(void);
+extern void test_telemetry_collector_circular_buffer(void);
+extern void test_metrics_tracker_init(void);
+extern void test_metrics_tracker_uptime(void);
+extern void test_metrics_tracker_error_tracking(void);
+extern void test_metrics_tracker_availability(void);
+
+extern void test_complete_network_failover_flow(void);
+extern void test_health_monitoring_degradation_flow(void);
+extern void test_telemetry_failure_scenario(void);
+
 extern void test_state_machine_initialization(void);
 extern void test_state_machine_transition(void);
 extern void test_state_machine_previous_state(void);
@@ -64,6 +103,23 @@ extern void test_available_networks_list(void);
 extern void test_bytes_sent_tracking(void);
 extern void test_bytes_received_tracking(void);
 extern void test_server_reconnect_statistics(void);
+
+// Reliability Integration Tests
+extern void test_multi_network_failover_simulated(void);
+extern void test_connection_pool_automatic_failover(void);
+extern void test_adaptive_reconnection_with_conditions(void);
+extern void test_network_quality_packet_loss_detection(void);
+extern void test_health_monitoring_multi_component_degradation(void);
+extern void test_health_predictive_failure_detection(void);
+extern void test_health_monitoring_recovery_flow(void);
+extern void test_circuit_breaker_cascading_failures(void);
+extern void test_degradation_mode_stress_transitions(void);
+extern void test_auto_recovery_execution_flow(void);
+extern void test_telemetry_comprehensive_failure_logging(void);
+extern void test_metrics_aggregation_over_time(void);
+extern void test_telemetry_event_filtering(void);
+extern void test_end_to_end_network_recovery(void);
+extern void test_prolonged_degradation_recovery(void);
 
 extern void test_audio_stream_initialization(void);
 extern void test_audio_buffer_management(void);

@@ -113,7 +113,10 @@ private:
     void handleErrors();
     void enterSafeMode();
     void emergencyShutdown();
-    
+
+    // State timeout detection
+    uint32_t getStateTimeout(SystemState state) const;
+
     // Performance monitoring
     void measureCPULoad();
     void updateMemoryStats();

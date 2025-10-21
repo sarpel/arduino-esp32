@@ -1,6 +1,7 @@
 #include "HealthMonitor.h"
 #include "../core/SystemManager.h"
 #include "../core/EventBus.h"
+#include "../core/StateMachine.h"
 #include "../utils/EnhancedLogger.h"
 #include <memory>
 #include "../network/NetworkManager.h"
@@ -10,7 +11,8 @@
 HealthMonitor::HealthMonitor() 
     : initialized(false), enable_predictions(true), auto_recovery_enabled(true),
       last_health_check(0), total_checks(0), failed_checks(0), auto_recoveries(0),
-      critical_events(0) {}
+      critical_events(0), recovery_phase(RecoveryPhase::RECOVERY_IDLE),
+      recovery_attempt_count(0), last_recovery_attempt(0), next_recovery_delay_ms(0) {}
 
 HealthMonitor::~HealthMonitor() {
     shutdown();
@@ -376,56 +378,154 @@ bool HealthMonitor::canAutoRecover() const {
         return false;
     }
     
+    // Check if recovery is in progress
+    if (recovery_phase != RecoveryPhase::RECOVERY_IDLE && 
+        recovery_phase != RecoveryPhase::RECOVERY_FAILED) {
+        return true;  // Recovery already in progress
+    }
+    
     // Check if we can recover from current state
     auto latest_health = getLatestHealth();
     
-    // Can recover from poor health but not critical
-    return latest_health.status == HealthStatus::POOR;
+    // Can recover from poor or critical health but only if not already failed
+    return (latest_health.status == HealthStatus::POOR || 
+            latest_health.status == HealthStatus::CRITICAL) &&
+           recovery_attempt_count < MAX_RECOVERY_ATTEMPTS;
 }
 
-void HealthMonitor::attemptRecovery() {
-    if (!canAutoRecover()) {
+void HealthMonitor::initiateRecovery() {
+    if (!auto_recovery_enabled) {
+        return;
+    }
+    
+    if (recovery_phase == RecoveryPhase::RECOVERY_FAILED) {
+        // Already failed max attempts, don't retry
+        return;
+    }
+    
+    if (recovery_phase != RecoveryPhase::RECOVERY_IDLE) {
+        // Already recovering
         return;
     }
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "Attempting auto-recovery");
+        logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__,
+                   "Initiating auto-recovery process");
     }
     
-    auto_recoveries++;
+    recovery_phase = RecoveryPhase::RECOVERY_CLEANUP;
+    recovery_attempt_count = 0;
+    last_recovery_attempt = millis();
+    next_recovery_delay_ms = 0;  // Start immediately
+}
+
+void HealthMonitor::attemptRecovery() {
+    // Check if we can attempt recovery - rate limiting with exponential backoff
+    if (recovery_phase == RecoveryPhase::RECOVERY_IDLE || 
+        recovery_phase == RecoveryPhase::RECOVERY_FAILED) {
+        // No recovery needed or max attempts exceeded
+        return;
+    }
+
+    unsigned long now = millis();
     
-    // Perform recovery actions based on health issues
-    auto latest_health = getLatestHealth();
-    
-    if (latest_health.memory_pressure > 0.6f) {
-        // Memory recovery
-        auto memory_manager = SystemManager::getInstance().getMemoryManager();
-        if (memory_manager) {
-            memory_manager->emergencyCleanup();
+    // Check if we should wait before attempting next recovery step
+    if (now - last_recovery_attempt < next_recovery_delay_ms) {
+        return;  // Not yet time to retry
+    }
+
+    auto logger = SystemManager::getInstance().getLogger();
+
+    switch (recovery_phase) {
+        case RecoveryPhase::RECOVERY_CLEANUP: {
+            // Step 1: Emergency memory cleanup
+            auto memory_manager = SystemManager::getInstance().getMemoryManager();
+            if (memory_manager) {
+                memory_manager->emergencyCleanup();
+                if (logger) {
+                    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, 
+                               "Recovery step 1: Emergency cleanup completed");
+                }
+            }
+            
+            // Move to next recovery phase
+            recovery_phase = RecoveryPhase::RECOVERY_DEFRAG;
+            last_recovery_attempt = now;
+            next_recovery_delay_ms = RECOVERY_RETRY_DELAY_MS;  // Base delay
+            break;
         }
-    }
-    
-    if (latest_health.cpu_load_percent > 70.0f) {
-        // CPU recovery - reduce load
-        // This could involve reducing processing frequency
-        auto& systemManager = SystemManager::getInstance();
-        auto eventBus = systemManager.getEventBus();
-        if (eventBus) {
-            eventBus->publish(SystemEvent::CPU_OVERLOAD);
+
+        case RecoveryPhase::RECOVERY_DEFRAG: {
+            // Step 2: Additional cleanup and memory stabilization
+            // Delay to allow system to stabilize after cleanup
+            if (logger) {
+                logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__,
+                           "Recovery step 2: Memory stabilization period");
+            }
+
+            // Move to next recovery phase
+            recovery_phase = RecoveryPhase::RECOVERY_RETRY;
+            last_recovery_attempt = now;
+            // Exponential backoff: double the delay for next attempt
+            next_recovery_delay_ms = (RECOVERY_RETRY_DELAY_MS * (1 << recovery_attempt_count));
+            if (next_recovery_delay_ms > 60000) {
+                next_recovery_delay_ms = 60000;  // Cap at 60 seconds
+            }
+            break;
         }
-    }
-    
-    if (latest_health.network_stability < 0.5f) {
-        // Network recovery
-        auto network_manager = SystemManager::getInstance().getNetworkManager();
-        if (network_manager) {
-            network_manager->switchToBestWiFiNetwork();
+
+        case RecoveryPhase::RECOVERY_RETRY: {
+            // Step 3: Verify recovery and retry network operations
+            auto latest_health = getLatestHealth();
+            
+            if (latest_health.memory_pressure < 0.6f && latest_health.cpu_load_percent < 70.0f) {
+                // Recovery successful!
+                if (logger) {
+                    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, 
+                               "Recovery successful! Memory pressure: %.2f, CPU load: %.2f%%",
+                               latest_health.memory_pressure, latest_health.cpu_load_percent);
+                }
+                recovery_phase = RecoveryPhase::RECOVERY_IDLE;
+                recovery_attempt_count = 0;
+                auto_recoveries++;
+            } else {
+                // Recovery not fully successful - increment attempt count
+                recovery_attempt_count++;
+                
+                if (recovery_attempt_count >= MAX_RECOVERY_ATTEMPTS) {
+                    // Max attempts exceeded - give up
+                    if (logger) {
+                        logger->log(LogLevel::LOG_WARN, "HealthMonitor", __FILE__, __LINE__, 
+                                   "Recovery failed after %u attempts - transitioning to ERROR state",
+                                   recovery_attempt_count);
+                    }
+                    recovery_phase = RecoveryPhase::RECOVERY_FAILED;
+                    // Trigger error state transition
+                    auto state_machine = SystemManager::getInstance().getStateMachine();
+                    if (state_machine) {
+                        state_machine->setState(SystemState::ERROR, StateTransitionReason::ERROR_CONDITION, 
+                                              "Recovery max attempts exceeded");
+                    }
+                } else {
+                    // Try again - go back to cleanup phase
+                    if (logger) {
+                        logger->log(LogLevel::LOG_WARN, "HealthMonitor", __FILE__, __LINE__, 
+                                   "Recovery attempt %u/%u - retrying cleanup",
+                                   recovery_attempt_count, MAX_RECOVERY_ATTEMPTS);
+                    }
+                    recovery_phase = RecoveryPhase::RECOVERY_CLEANUP;
+                    last_recovery_attempt = now;
+                    next_recovery_delay_ms = RECOVERY_RETRY_DELAY_MS;
+                }
+            }
+            break;
         }
-    }
-    
-    if (logger) {
-        logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "Auto-recovery completed");
+
+        case RecoveryPhase::RECOVERY_IDLE:
+        case RecoveryPhase::RECOVERY_FAILED:
+            // Already handled above
+            break;
     }
 }
 

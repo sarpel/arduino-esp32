@@ -99,6 +99,13 @@
 // ===== State Machine Timeouts =====
 #define STATE_CHANGE_DEBOUNCE 100 // milliseconds - debounce state transitions
 
+// ===== State Timeout Thresholds =====
+// These timeouts detect when a state is stuck and trigger recovery
+#define WIFI_CONNECT_TIMEOUT_MS 30000      // 30 seconds - WiFi connection timeout
+#define SERVER_CONNECT_TIMEOUT_MS 10000    // 10 seconds - Server connection timeout
+#define INITIALIZING_TIMEOUT_MS 10000      // 10 seconds - System initialization timeout
+#define ERROR_RECOVERY_TIMEOUT_MS 60000    // 60 seconds - Max time in ERROR state before force reset
+
 // ===== Debug Configuration =====
 // Compile-time debug level (0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG, 5=VERBOSE)
 // Set to 0 for production (minimal logging), 3+ for development
