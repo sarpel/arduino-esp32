@@ -50,7 +50,7 @@ private:
     uint32_t failovers;
     
     void updateConnectionHealth();
-    bool isConnectionHealthy(const PooledConnection& conn);
+    bool isConnectionHealthy(PooledConnection& conn);
     
 public:
     ConnectionPool();

@@ -109,8 +109,11 @@ void HealthMonitor::initializeHealthChecks() {
         []() -> String {
             auto network_manager = SystemManager::getInstance().getNetworkManager();
             if (!network_manager) return String("Network manager not available");
-            return String("WiFi: ") + String(network_manager->isWiFiConnected() ? "connected" : "disconnected") +
-                   String(", Stability: ") + String(network_manager->getNetworkStability());
+            String result = String("WiFi: ");
+            result += network_manager->isWiFiConnected() ? "connected" : "disconnected";
+            result += String(", Stability: ");
+            result += String(network_manager->getNetworkStability());
+            return result;
         },
         HealthStatus::POOR,
         15000  // Check every 15 seconds
@@ -127,7 +130,9 @@ void HealthMonitor::initializeHealthChecks() {
         []() -> String {
             auto audio_processor = SystemManager::getInstance().getAudioProcessor();
             if (!audio_processor) return String("Audio processor not available");
-            return String("Audio quality: ") + String(audio_processor->getAudioQualityScore());
+            String result = String("Audio quality: ");
+            result += String(audio_processor->getAudioQualityScore());
+            return result;
         },
         HealthStatus::FAIR,
         20000  // Check every 20 seconds
@@ -214,7 +219,8 @@ bool HealthMonitor::performHealthCheck(HealthCheck& check) {
             critical_events++;
             
             // Publish critical health event
-            auto eventBus = SystemManager::getInstance().getEventBus();
+            auto& systemManager = SystemManager::getInstance();
+            auto eventBus = systemManager.getEventBus();
             if (eventBus) {
                 eventBus->publish(SystemEvent::SYSTEM_ERROR);
             }
@@ -403,7 +409,8 @@ void HealthMonitor::attemptRecovery() {
     if (latest_health.cpu_load_percent > 70.0f) {
         // CPU recovery - reduce load
         // This could involve reducing processing frequency
-        auto eventBus = SystemManager::getInstance().getEventBus();
+        auto& systemManager = SystemManager::getInstance();
+        auto eventBus = systemManager.getEventBus();
         if (eventBus) {
             eventBus->publish(SystemEvent::CPU_OVERLOAD);
         }

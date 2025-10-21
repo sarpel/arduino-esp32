@@ -517,14 +517,13 @@ void NetworkManager::printStatistics() const {
     logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "==========================");
 }
 
-bool NetworkManager::validateConnection() const {
+bool NetworkManager::validateConnection() {
     if (wifi_connected && WiFi.status() != WL_CONNECTED) {
         return false;
     }
     
     if (server_connected) {
-        WiFiClient& mutable_client = const_cast<WiFiClient&>(client);
-        if (!mutable_client.connected()) {
+        if (!client.connected()) {
             return false;
         }
     }

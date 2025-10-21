@@ -148,7 +148,7 @@ public:
     // Utility
     void printNetworkInfo() const;
     void printStatistics() const;
-    bool validateConnection() const;
+    bool validateConnection();
     
     // Advanced features
     bool startWiFiScan();

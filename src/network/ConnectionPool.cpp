@@ -268,8 +268,8 @@ void ConnectionPool::updateConnectionHealth() {
     }
 }
 
-bool ConnectionPool::isConnectionHealthy(const PooledConnection& conn) {
-    WiFiClient& client = const_cast<WiFiClient&>(conn.client);
+bool ConnectionPool::isConnectionHealthy(PooledConnection& conn) {
+    WiFiClient& client = conn.client;
     if (!client.connected()) {
         return false;
     }

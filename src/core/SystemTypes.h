@@ -48,7 +48,14 @@ enum class SystemEvent {
     // Security events
     SECURITY_BREACH,
     AUTHENTICATION_FAILED,
-    ENCRYPTION_ERROR
+    ENCRYPTION_ERROR,
+
+    // Reliability events (Phase 1-4)
+    MODE_CHANGED,
+    HEALTH_DEGRADED,
+    RECOVERY_STARTED,
+    CIRCUIT_BREAKER_OPENED,
+    CIRCUIT_BREAKER_CLOSED
 };
 
 // Event priority levels (avoiding Arduino macro conflicts)
