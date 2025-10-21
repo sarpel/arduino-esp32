@@ -3,10 +3,11 @@
 ## Executive Summary
 
 - **Original Errors**: 383 compilation errors
-- **Current Errors**: 213 compilation errors
-- **Progress**: 44% reduction (170 errors fixed)
-- **Status**: Foundation fixes complete, architectural issues remain
-- **Last Updated**: 2025-10-21
+- **Phase 1 Errors**: 213 compilation errors (44% reduction)
+- **Current Errors**: 109 compilation errors (71% total reduction from 383)
+- **Progress**: Phase 1+2a complete - 274 errors fixed, 109 remaining
+- **Status**: Logger signatures and C++11 compatibility fixed, architectural issues remain
+- **Last Updated**: 2025-10-21 (Phase 2a complete)
 
 ---
 
@@ -64,7 +65,7 @@ src/main.cpp
 - ✅ `LogOutputType::SYSLOG` → `LogOutputType::SYSLOG_OUTPUT`
 - ✅ `LogOutputType::CUSTOM` → `LogOutputType::CUSTOM_OUTPUT`
 
-### Phase 3: Logger Call Fixes (40+ instances)
+### Phase 3: Logger Call Fixes (40+ instances - PHASE 1)
 
 #### Logger Function Signature Standardization
 - ✅ Fixed signature: `log(LogLevel level, const char* component, const char* file, int line, const char* format, ...)`
@@ -79,6 +80,48 @@ src/core/EventBus.cpp          (20+ calls)
 src/utils/EnhancedLogger.cpp    (15+ calls)
 src/monitoring/HealthMonitor.cpp (10+ calls)
 src/network/ProtocolHandler.cpp  (10+ calls)
+```
+
+### Phase 2a: Logger Signatures & C++11 Compatibility (104 errors resolved) ✅
+
+#### Logger Signature Fixes (52+ instances across 4+ modules)
+- ✅ Fixed EnhancedLogger.cpp convenience methods (debug, info, warn, error, critical)
+- ✅ Fixed AudioProcessor.cpp (22 logger calls with proper parameters)
+- ✅ Fixed ConfigManager.cpp (30 logger calls with __FILE__ and __LINE__)
+- ✅ Fixed ConnectionPool.cpp (5 logger calls)
+- ✅ Fixed SecurityManager.cpp (20 logger calls)
+- ✅ Fixed NetworkSimulator.cpp (17 logger calls)
+- ✅ Fixed AdaptiveAudioQuality.cpp (10 logger calls)
+
+#### Enum Namespace Fixes
+- ✅ Fixed LogLevel references: LOG_INFO → LogLevel::LOG_INFO (100+ instances)
+- ✅ Fixed EventPriority references: CRITICAL → CRITICAL_PRIORITY, NORMAL → NORMAL_PRIORITY
+- ✅ Added missing includes (EventBus.h, AudioProcessor.h, NetworkManager.h)
+
+#### C++11 Compatibility Fixes
+- ✅ Replaced std::make_unique with std::unique_ptr<T>(new T(...)) (9 instances)
+- ✅ Fixed lambda to std::function conversions in StateMachine (8 instances)
+- ✅ Added StateConfig default constructor fixes
+
+#### Arduino API Compatibility
+- ✅ Added LED_BUILTIN macro definition for ESP32 (#define LED_BUILTIN 2)
+- ✅ Added ESP.getHeapFragmentation() compatibility wrapper
+- ✅ Created getHeapFragmentation() helper for ESP32 systems
+
+#### Files Modified (Phase 2a)
+```
+src/core/StateMachine.cpp          (fixed lambda conversions)
+src/utils/EnhancedLogger.cpp        (fixed convenience methods)
+src/utils/ConfigManager.cpp         (30 logger calls)
+src/audio/AudioProcessor.cpp        (22 logger calls)
+src/network/NetworkManager.cpp      (added EventBus include)
+src/network/ConnectionPool.cpp      (5 logger calls)
+src/monitoring/HealthMonitor.cpp    (added includes)
+src/security/SecurityManager.cpp    (20 logger calls)
+src/simulation/NetworkSimulator.cpp (17 logger calls)
+src/audio/AdaptiveAudioQuality.cpp  (10 logger calls)
+src/main.cpp                        (ESP32 compatibility, LED_BUILTIN, print declarations)
+src/utils/MemoryManager.cpp         (added EventBus include)
 ```
 
 ### Phase 4: C++ Compatibility Fixes
@@ -96,11 +139,111 @@ src/network/ProtocolHandler.cpp  (10+ calls)
 
 ---
 
-## Remaining Issues (213 errors)
+## Remaining Issues (109 errors - 48% of original 213 remaining)
 
 ### Critical Issues Blocking Compilation
 
-#### 1. Circular Dependencies (78 errors)
+#### 1. Logger getInstance() Access Issues (5 errors)
+**Problem**:
+- Code calling `EnhancedLogger::getInstance()` but EnhancedLogger is not a singleton
+- Must access logger through `SystemManager::getInstance().getLogger()`
+
+**Affected Files**:
+- src/network/ConnectionPool.cpp (some remaining calls)
+
+**Solution**: Replace direct getInstance() calls with SystemManager accessor
+
+---
+
+#### 2. Logger Signature Mismatches (30+ errors)
+**Problem**:
+- Some logger calls in HealthMonitor and other files have wrong parameter counts
+- String type inconsistencies in lambda return types
+- Missing __FILE__ and __LINE__ parameters in a few remaining calls
+
+**Affected Files**:
+- src/monitoring/HealthMonitor.cpp (3-4 calls, String type issues in lambdas)
+- src/network/NetworkManager.cpp (remaining calls)
+- Various other modules with incomplete logger fixes
+
+**Status**: Most fixed in Phase 2a, ~30 remain to be resolved
+
+---
+
+#### 3. Static Member Access Issues (6 errors)
+**Problem**:
+- Static member functions trying to access instance member variables
+- MemoryManager::getAllocationType() static method accessing pool members
+- Need refactoring to use proper static storage or pass instances
+
+**Affected Files**:
+- src/utils/MemoryManager.cpp (getAllocationType implementation)
+
+**Solution Options**:
+1. Convert static methods to instance methods
+2. Use static pools or thread-local storage
+3. Refactor architecture to avoid static/instance mixing
+
+---
+
+#### 4. Arduino WiFi API Compatibility (2 errors)
+**Problem**:
+- WiFiClient API differences between ESP32 versions
+- setKeepAlive() not available on all variants
+- const WiFiClient cannot call non-const methods
+
+**Example Errors**:
+```cpp
+// Error: 'class WiFiClient' has no member named 'setKeepAlive'
+// Error: passing 'const WiFiClient' as 'this' argument discards qualifiers
+```
+
+**Affected Files**:
+- src/network/NetworkManager.cpp (2 WiFi API calls)
+- src/network/ConnectionPool.cpp (WiFi const issues)
+
+**Solution**:
+1. Wrap WiFi API calls in #ifdef guards
+2. Create compatibility layer for WiFi methods
+3. Remove non-portable API calls
+
+---
+
+#### 5. String Type Inconsistencies (3 errors)
+**Problem**:
+- Lambda functions return type deduction failing
+- Mixed String and StringSumHelper types
+- Arduino String concatenation ambiguity
+
+**Affected Files**:
+- src/monitoring/HealthMonitor.cpp (3 lambda functions)
+
+**Example**:
+```cpp
+auto lambda = []() { return String("text") + variable; };
+// Deduced as StringSumHelper instead of String
+```
+
+**Solution**:
+1. Explicitly cast String operations
+2. Specify return type in lambda: []() -> String { ... }
+3. Use printf instead of String concatenation
+
+---
+
+#### 6. Smart Pointer Logic Issues (3 errors)
+**Problem**:
+- Logical expressions with smart pointers and void returns
+- unique_ptr && void comparison issues
+
+**Affected Files**:
+- src/utils/MemoryManager.cpp (3 operator&& errors)
+
+**Status**: Architectural issue requiring logic refactoring
+
+---
+
+#### 7. Old Category: Circular Dependencies (78 errors)
 **Problem**:
 - SystemManager.h forward-declares NetworkManager, HealthMonitor, MemoryManager, etc.
 - .cpp implementations need full includes to call methods
