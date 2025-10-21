@@ -99,7 +99,7 @@ private:
     void loadConfigurationFromBLE();
     void saveConfigurationToFile();
     bool validateConfiguration();
-    bool validateConfigValue(const ConfigValidation& rule, const ConfigValue& value);
+    bool validateConfigValue(const ConfigValidation& rule, const ConfigValue& value) const;
     void applyConfiguration();
     ConfigProfile* findProfile(const String& name);
     void createDefaultProfiles();

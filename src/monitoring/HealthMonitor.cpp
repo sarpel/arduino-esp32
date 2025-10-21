@@ -1,5 +1,6 @@
 #include "HealthMonitor.h"
 #include "../core/SystemManager.h"
+#include "../core/EventBus.h"
 #include "../utils/EnhancedLogger.h"
 #include <memory>
 #include "../network/NetworkManager.h"
@@ -22,7 +23,7 @@ bool HealthMonitor::initialize() {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "Initializing HealthMonitor");
+        logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "Initializing HealthMonitor");
     }
     
     // Initialize health checks
@@ -38,7 +39,7 @@ bool HealthMonitor::initialize() {
     initialized = true;
     
     if (logger) {
-        logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "HealthMonitor initialized with %u health checks",
+        logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor initialized with %u health checks",
                    health_checks.size());
     }
     
@@ -52,7 +53,7 @@ void HealthMonitor::shutdown() {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "Shutting down HealthMonitor");
+        logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "Shutting down HealthMonitor");
         printStatistics();
     }
     
@@ -72,10 +73,10 @@ void HealthMonitor::initializeHealthChecks() {
             if (!memory_manager) return true;
             return memory_manager->getFreeMemory() > 20000;  // At least 20KB free
         },
-        []() {
+        []() -> String {
             auto memory_manager = SystemManager::getInstance().getMemoryManager();
             if (!memory_manager) return String("Memory manager not available");
-            return String("Free memory: ") + memory_manager->getFreeMemory() + " bytes";
+            return String("Free memory: ") + String(memory_manager->getFreeMemory()) + " bytes";
         },
         HealthStatus::CRITICAL,
         10000  // Check every 10 seconds
@@ -105,11 +106,11 @@ void HealthMonitor::initializeHealthChecks() {
             return network_manager->isWiFiConnected() && 
                    network_manager->getNetworkStability() > 0.3f;
         },
-        []() {
+        []() -> String {
             auto network_manager = SystemManager::getInstance().getNetworkManager();
             if (!network_manager) return String("Network manager not available");
-            return String("WiFi: ") + (network_manager->isWiFiConnected() ? "connected" : "disconnected") +
-                   ", Stability: " + network_manager->getNetworkStability();
+            return String("WiFi: ") + String(network_manager->isWiFiConnected() ? "connected" : "disconnected") +
+                   String(", Stability: ") + String(network_manager->getNetworkStability());
         },
         HealthStatus::POOR,
         15000  // Check every 15 seconds
@@ -123,10 +124,10 @@ void HealthMonitor::initializeHealthChecks() {
             if (!audio_processor) return true;
             return audio_processor->getAudioQualityScore() > 0.5f;
         },
-        []() {
+        []() -> String {
             auto audio_processor = SystemManager::getInstance().getAudioProcessor();
             if (!audio_processor) return String("Audio processor not available");
-            return String("Audio quality: ") + audio_processor->getAudioQualityScore();
+            return String("Audio quality: ") + String(audio_processor->getAudioQualityScore());
         },
         HealthStatus::FAIR,
         20000  // Check every 20 seconds
@@ -205,7 +206,7 @@ bool HealthMonitor::performHealthCheck(HealthCheck& check) {
         
         auto logger = SystemManager::getInstance().getLogger();
         if (logger) {
-            logger->log(LogLevel::LOG_WARN, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "Health check failed: %s", check.name.c_str());
+            logger->log(LogLevel::LOG_WARN, "HealthMonitor", __FILE__, __LINE__, "Health check failed: %s", check.name.c_str());
         }
         
         // Handle critical failures
@@ -383,7 +384,7 @@ void HealthMonitor::attemptRecovery() {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "Attempting auto-recovery");
+        logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "Attempting auto-recovery");
     }
     
     auto_recoveries++;
@@ -417,7 +418,7 @@ void HealthMonitor::attemptRecovery() {
     }
     
     if (logger) {
-        logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "Auto-recovery completed");
+        logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "Auto-recovery completed");
     }
 }
 
@@ -464,55 +465,55 @@ void HealthMonitor::printHealthStatus() const {
     
     auto latest_health = getLatestHealth();
     
-    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "=== Health Status ===");
-    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "Overall Score: %.2f", latest_health.overall_score);
-    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "Status: %s", getHealthStatusString(latest_health.status));
-    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "CPU Load: %.1f%%", latest_health.cpu_load_percent);
-    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "Memory Pressure: %.2f", latest_health.memory_pressure);
-    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "Network Stability: %.2f", latest_health.network_stability);
-    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "Audio Quality: %.2f", latest_health.audio_quality_score);
-    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "Temperature: %.1f°C", latest_health.temperature);
-    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "Predicted Failures: %u", latest_health.predicted_failures);
-    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "==================");
+    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "=== Health Status ===");
+    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "Overall Score: %.2f", latest_health.overall_score);
+    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "Status: %s", getHealthStatusString(latest_health.status));
+    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "CPU Load: %.1f%%", latest_health.cpu_load_percent);
+    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "Memory Pressure: %.2f", latest_health.memory_pressure);
+    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "Network Stability: %.2f", latest_health.network_stability);
+    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "Audio Quality: %.2f", latest_health.audio_quality_score);
+    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "Temperature: %.1f°C", latest_health.temperature);
+    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "Predicted Failures: %u", latest_health.predicted_failures);
+    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "==================");
 }
 
 void HealthMonitor::printStatistics() const {
     auto logger = SystemManager::getInstance().getLogger();
     if (!logger) return;
     
-    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "=== Health Monitor Statistics ===");
-    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "Total checks: %u", total_checks);
-    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "Failed checks: %u", failed_checks);
-    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "Success rate: %.1f%%", 
+    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "=== Health Monitor Statistics ===");
+    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "Total checks: %u", total_checks);
+    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "Failed checks: %u", failed_checks);
+    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "Success rate: %.1f%%", 
                total_checks > 0 ? (1.0f - static_cast<float>(failed_checks) / total_checks) * 100.0f : 100.0f);
-    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "Auto recoveries: %u", auto_recoveries);
-    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "Critical events: %u", critical_events);
-    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "Health checks: %u", health_checks.size());
-    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "Predictions: %u", predictions.size());
-    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "History size: %u", health_history.size());
-    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "================================");
+    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "Auto recoveries: %u", auto_recoveries);
+    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "Critical events: %u", critical_events);
+    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "Health checks: %u", health_checks.size());
+    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "Predictions: %u", predictions.size());
+    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "History size: %u", health_history.size());
+    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "================================");
 }
 
 void HealthMonitor::printPredictions() const {
     auto logger = SystemManager::getInstance().getLogger();
     if (!logger) return;
     
-    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "=== Failure Predictions ===");
+    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "=== Failure Predictions ===");
     
     if (predictions.empty()) {
-        logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "No failure predictions at this time");
+        logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "No failure predictions at this time");
     } else {
         for (const auto& prediction : predictions) {
-            logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "%s: %s (%.1f%%) in ~%u seconds",
+            logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "%s: %s (%.1f%%) in ~%u seconds",
                        prediction.component.c_str(),
                        prediction.failure_type.c_str(),
                        prediction.probability * 100.0f,
                        prediction.time_to_failure_seconds);
-            logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "  Action: %s", prediction.recommended_action.c_str());
+            logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "  Action: %s", prediction.recommended_action.c_str());
         }
     }
     
-    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "HealthMonitor", "==========================");
+    logger->log(LogLevel::LOG_INFO, "HealthMonitor", __FILE__, __LINE__, "==========================");
 }
 
 String HealthMonitor::getHealthStatusString(HealthStatus status) const {

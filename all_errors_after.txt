@@ -1,0 +1,1 @@
+src/network/ConnectionPool.cpp:299:130: error: passing 'const ConnectionPool' as 'this' argument discards qualifiers [-fpermissive]

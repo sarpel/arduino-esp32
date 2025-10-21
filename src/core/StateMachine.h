@@ -38,6 +38,10 @@ struct StateConfig {
     bool allow_manual_transition;
     bool auto_recovery_enabled;
     
+    StateConfig() 
+        : state(SystemState::INITIALIZING), max_duration_ms(0), allow_manual_transition(true), 
+          auto_recovery_enabled(true) {}
+    
     StateConfig(SystemState s) 
         : state(s), max_duration_ms(0), allow_manual_transition(true), 
           auto_recovery_enabled(true) {}

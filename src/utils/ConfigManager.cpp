@@ -248,7 +248,7 @@ bool ConfigManager::validateConfiguration() {
     return true;
 }
 
-bool ConfigManager::validateConfigValue(const ConfigValidation& rule, const ConfigValue& value) {
+bool ConfigManager::validateConfigValue(const ConfigValidation& rule, const ConfigValue& value) const {
     // Check type
     if (value.type != rule.expected_type) {
         return false;

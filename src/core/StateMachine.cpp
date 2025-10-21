@@ -29,7 +29,7 @@ bool StateMachine::initialize() {
     // Log initialization
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LogLevel::LOG_INFO, "StateMachine", "StateMachine initialized - current state: %s",
+        logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "StateMachine initialized - current state: %s",
                    getCurrentStateName().c_str());
     }
     
@@ -44,7 +44,7 @@ void StateMachine::shutdown() {
     // Log shutdown
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LogLevel::LOG_INFO, "StateMachine", "StateMachine shutting down - final state: %s",
+        logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "StateMachine shutting down - final state: %s",
                    getCurrentStateName().c_str());
         printStatistics();
     }
@@ -66,7 +66,7 @@ void StateMachine::configureState(const StateConfig& config) {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LogLevel::LOG_DEBUG, "StateMachine", "Configured state %s with %u entry conditions, %u exit conditions",
+        logger->log(LogLevel::LOG_DEBUG, "StateMachine", __FILE__, __LINE__, "Configured state %s with %u entry conditions, %u exit conditions",
                    getStateName(config.state).c_str(), 
                    config.entry_conditions.size(), 
                    config.exit_conditions.size());

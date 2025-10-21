@@ -1,5 +1,6 @@
 #include "SecurityManager.h"
 #include "../utils/EnhancedLogger.h"
+#include "../core/SystemManager.h"
 #include <cstring>
 #include <algorithm>
 #include <cmath>
@@ -234,32 +235,32 @@ void SecurityManager::rotateEncryptionKey() {
 }
 
 void SecurityManager::printSecurityStatus() const {
-    EnhancedLogger& logger = EnhancedLogger::getInstance();
+    EnhancedLogger* logger = SystemManager::getInstance().getLogger();
 
-    logger.log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "=== Security Manager Status ===");
-    logger.log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Initialized: %s", initialized ? "Yes" : "No");
-    logger.log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Encryption Method: %d", static_cast<int>(encryption_method));
-    logger.log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Authentication Method: %d", static_cast<int>(auth_method));
-    logger.log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Audit Enabled: %s", audit_enabled ? "Yes" : "No");
-    logger.log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "");
-    logger.log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "=== Authentication Statistics ===");
-    logger.log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Total Attempts: %u", total_auth_attempts);
-    logger.log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Successful: %u", successful_auth);
-    logger.log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Failed: %u", failed_auth);
-    logger.log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Success Rate: %.2f%%", getAuthSuccessRate());
-    logger.log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "");
-    logger.log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "=== Error Statistics ===");
-    logger.log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Encryption Errors: %u", encryption_errors);
-    logger.log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Decryption Errors: %u", decryption_errors);
-    logger.log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Checksum Failures: %u", checksum_failures);
-    logger.log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Unauthorized Attempts: %u", unauthorized_attempts);
+    logger->log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "=== Security Manager Status ===");
+    logger->log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Initialized: %s", initialized ? "Yes" : "No");
+    logger->log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Encryption Method: %d", static_cast<int>(encryption_method));
+    logger->log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Authentication Method: %d", static_cast<int>(auth_method));
+    logger->log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Audit Enabled: %s", audit_enabled ? "Yes" : "No");
+    logger->log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "");
+    logger->log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "=== Authentication Statistics ===");
+    logger->log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Total Attempts: %u", total_auth_attempts);
+    logger->log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Successful: %u", successful_auth);
+    logger->log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Failed: %u", failed_auth);
+    logger->log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Success Rate: %.2f%%", getAuthSuccessRate());
+    logger->log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "");
+    logger->log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "=== Error Statistics ===");
+    logger->log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Encryption Errors: %u", encryption_errors);
+    logger->log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Decryption Errors: %u", decryption_errors);
+    logger->log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Checksum Failures: %u", checksum_failures);
+    logger->log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Unauthorized Attempts: %u", unauthorized_attempts);
 }
 
 void SecurityManager::printAuditLog() const {
-    EnhancedLogger& logger = EnhancedLogger::getInstance();
+    EnhancedLogger* logger = SystemManager::getInstance().getLogger();
 
-    logger.log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "=== Security Audit Log ===");
-    logger.log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Total Entries: %u", static_cast<uint32_t>(audit_logs.size()));
+    logger->log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "=== Security Audit Log ===");
+    logger->log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "Total Entries: %u", static_cast<uint32_t>(audit_logs.size()));
 
     for (const auto& log : audit_logs) {
         const char* event_name = "UNKNOWN";
@@ -286,7 +287,7 @@ void SecurityManager::printAuditLog() const {
                 break;
         }
 
-        logger.log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "[%u ms] %s: %s (Severity: %s)",
+        logger->log(LogLevel::LOG_INFO, "SecurityManager", __FILE__, __LINE__, "[%u ms] %s: %s (Severity: %s)",
                   log.timestamp, event_name, log.description,
                   log.severity ? "HIGH" : "LOW");
     }

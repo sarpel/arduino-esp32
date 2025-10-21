@@ -30,7 +30,7 @@ bool EnhancedLogger::initialize() {
     initialized = true;
     
     // Log initialization
-    log(LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "EnhancedLogger initialized");
+    log(LogLevel::LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "EnhancedLogger initialized");
     
     return true;
 }
@@ -44,7 +44,7 @@ void EnhancedLogger::shutdown() {
     flushBuffer();
     
     // Log shutdown
-    log(LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "EnhancedLogger shutting down");
+    log(LogLevel::LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "EnhancedLogger shutting down");
     printStatistics();
     
     // Clear outputs and filters
@@ -63,7 +63,7 @@ void EnhancedLogger::addOutput(const LogOutputConfig& config) {
     outputs.push_back(config);
     
     // Log new output
-    log(LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "Added output: %s", 
+    log(LogLevel::LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "Added output: %s", 
         getOutputName(config.type));
 }
 
@@ -79,7 +79,7 @@ void EnhancedLogger::enableOutput(LogOutputType type, bool enable) {
     for (auto& output : outputs) {
         if (output.type == type) {
             output.enabled = enable;
-            log(LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "%s output %s",
+            log(LogLevel::LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "%s output %s",
                 getOutputName(type), enable ? "enabled" : "disabled");
             break;
         }

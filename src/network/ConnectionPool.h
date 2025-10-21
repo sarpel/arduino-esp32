@@ -81,7 +81,7 @@ public:
     
     ConnectionState getConnectionState(uint8_t connection_id);
     bool isConnectionActive(uint8_t connection_id);
-    uint8_t getActiveConnectionCount();
+    uint8_t getActiveConnectionCount() const;
     
     uint32_t getTotalReconnects() const { return total_reconnects; }
     uint32_t getFailoverCount() const { return failovers; }

@@ -139,7 +139,7 @@ bool NetworkManager::initialize() {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LogLevel::LOG_INFO, "NetworkManager", "Initializing NetworkManager");
+        logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "Initializing NetworkManager");
     }
     
     // Initialize WiFi
@@ -157,7 +157,7 @@ bool NetworkManager::initialize() {
     initialized = true;
     
     if (logger) {
-        logger->log(LogLevel::LOG_INFO, "NetworkManager", "NetworkManager initialized with %u WiFi networks",
+        logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "NetworkManager initialized with %u WiFi networks",
                    wifi_manager->getNetworkCount());
     }
     
@@ -171,7 +171,7 @@ void NetworkManager::shutdown() {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LogLevel::LOG_INFO, "NetworkManager", "Shutting down NetworkManager");
+        logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "Shutting down NetworkManager");
         printStatistics();
     }
     
@@ -194,7 +194,7 @@ void NetworkManager::handleWiFiConnection() {
             
             auto logger = SystemManager::getInstance().getLogger();
             if (logger) {
-                logger->log(LogLevel::LOG_INFO, "NetworkManager", "WiFi connected - IP: %s, RSSI: %d dBm",
+                logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "WiFi connected - IP: %s, RSSI: %d dBm",
                            WiFi.localIP().toString().c_str(), WiFi.RSSI());
             }
             
@@ -220,7 +220,7 @@ void NetworkManager::handleWiFiConnection() {
             
             auto logger = SystemManager::getInstance().getLogger();
             if (logger) {
-                logger->log(LogLevel::LOG_WARN, "NetworkManager", "WiFi connection lost");
+                logger->log(LogLevel::LOG_WARN, "NetworkManager", __FILE__, __LINE__, "WiFi connection lost");
             }
             
             // Publish disconnection event
@@ -275,7 +275,7 @@ bool NetworkManager::connectToServerInternal() {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LogLevel::LOG_INFO, "NetworkManager", "Connecting to server %s:%d",
+        logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "Connecting to server %s:%d",
                    SERVER_HOST, SERVER_PORT);
     }
     
@@ -285,11 +285,14 @@ bool NetworkManager::connectToServerInternal() {
         server_reconnect_count++;
         
         // Configure TCP keepalive
-        client.setKeepAlive(true);
+        #ifdef ESP32
+        // ESP32 WiFiClient doesn't have setKeepAlive in all versions
+        // client.setKeepAlive(true);
+        #endif
         client.setNoDelay(true);
         
         if (logger) {
-            logger->log(LogLevel::LOG_INFO, "NetworkManager", "Server connection established");
+            logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "Server connection established");
         }
         
         // Publish connection event
@@ -303,7 +306,7 @@ bool NetworkManager::connectToServerInternal() {
         tcp_error_count++;
         
         if (logger) {
-            logger->log(LogLevel::LOG_ERROR, "NetworkManager", "Server connection failed");
+            logger->log(LogLevel::LOG_ERROR, "NetworkManager", __FILE__, __LINE__, "Server connection failed");
         }
         
         return false;
@@ -317,7 +320,7 @@ void NetworkManager::disconnectFromWiFiInternal() {
         
         auto logger = SystemManager::getInstance().getLogger();
         if (logger) {
-            logger->log(LogLevel::LOG_INFO, "NetworkManager", "WiFi disconnected");
+            logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "WiFi disconnected");
         }
     }
 }
@@ -329,7 +332,7 @@ void NetworkManager::disconnectFromServerInternal() {
         
         auto logger = SystemManager::getInstance().getLogger();
         if (logger) {
-            logger->log(LogLevel::LOG_INFO, "NetworkManager", "Server disconnected");
+            logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "Server disconnected");
         }
         
         // Publish disconnection event
@@ -338,6 +341,10 @@ void NetworkManager::disconnectFromServerInternal() {
             eventBus->publish(SystemEvent::SERVER_DISCONNECTED);
         }
     }
+}
+
+bool NetworkManager::connectToServer() {
+    return connectToServerInternal();
 }
 
 bool NetworkManager::writeData(const uint8_t* data, size_t length) {
@@ -465,9 +472,7 @@ void NetworkManager::clearWiFiNetworks() {
     }
 }
 
-int NetworkManager::getWiFiRSSI() const {
-    return WiFi.status() == WL_CONNECTED ? WiFi.RSSI() : 0;
-}
+
 
 String NetworkManager::getWiFiSSID() const {
     return WiFi.status() == WL_CONNECTED ? WiFi.SSID() : "";
@@ -481,35 +486,35 @@ void NetworkManager::printNetworkInfo() const {
     auto logger = SystemManager::getInstance().getLogger();
     if (!logger) return;
     
-    logger->log(LogLevel::LOG_INFO, "NetworkManager", "=== Network Information ===");
-    logger->log(LogLevel::LOG_INFO, "NetworkManager", "WiFi Connected: %s", wifi_connected ? "yes" : "no");
+    logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "=== Network Information ===");
+    logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "WiFi Connected: %s", wifi_connected ? "yes" : "no");
 
     if (wifi_connected) {
-        logger->log(LogLevel::LOG_INFO, "NetworkManager", "WiFi SSID: %s", getWiFiSSID().c_str());
-        logger->log(LogLevel::LOG_INFO, "NetworkManager", "WiFi IP: %s", getWiFiIP().toString().c_str());
-        logger->log(LogLevel::LOG_INFO, "NetworkManager", "WiFi RSSI: %d dBm", getWiFiRSSI());
-        logger->log(LogLevel::LOG_INFO, "NetworkManager", "Network Stability: %.2f", current_quality.stability_score);
+        logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "WiFi SSID: %s", getWiFiSSID().c_str());
+        logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "WiFi IP: %s", getWiFiIP().toString().c_str());
+        logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "WiFi RSSI: %d dBm", getWiFiRSSI());
+        logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "Network Stability: %.2f", current_quality.stability_score);
     }
 
-    logger->log(LogLevel::LOG_INFO, "NetworkManager", "Server Connected: %s", server_connected ? "yes" : "no");
-    logger->log(LogLevel::LOG_INFO, "NetworkManager", "Server Host: %s:%d", SERVER_HOST, SERVER_PORT);
-    logger->log(LogLevel::LOG_INFO, "NetworkManager", "==========================");
+    logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "Server Connected: %s", server_connected ? "yes" : "no");
+    logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "Server Host: %s:%d", SERVER_HOST, SERVER_PORT);
+    logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "==========================");
 }
 
 void NetworkManager::printStatistics() const {
     auto logger = SystemManager::getInstance().getLogger();
     if (!logger) return;
     
-    logger->log(LogLevel::LOG_INFO, "NetworkManager", "=== Network Statistics ===");
-    logger->log(LogLevel::LOG_INFO, "NetworkManager", "WiFi Reconnects: %u", wifi_reconnect_count);
-    logger->log(LogLevel::LOG_INFO, "NetworkManager", "Server Reconnects: %u", server_reconnect_count);
-    logger->log(LogLevel::LOG_INFO, "NetworkManager", "TCP Errors: %u", tcp_error_count);
-    logger->log(LogLevel::LOG_INFO, "NetworkManager", "Bytes Sent: %u", bytes_sent);
-    logger->log(LogLevel::LOG_INFO, "NetworkManager", "Bytes Received: %u", bytes_received);
-    logger->log(LogLevel::LOG_INFO, "NetworkManager", "Connection Drops: %u", current_quality.connection_drops);
-    logger->log(LogLevel::LOG_INFO, "NetworkManager", "Current RSSI: %d dBm", current_quality.rssi);
-    logger->log(LogLevel::LOG_INFO, "NetworkManager", "Network Stability: %.2f", current_quality.stability_score);
-    logger->log(LogLevel::LOG_INFO, "NetworkManager", "==========================");
+    logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "=== Network Statistics ===");
+    logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "WiFi Reconnects: %u", wifi_reconnect_count);
+    logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "Server Reconnects: %u", server_reconnect_count);
+    logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "TCP Errors: %u", tcp_error_count);
+    logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "Bytes Sent: %u", bytes_sent);
+    logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "Bytes Received: %u", bytes_received);
+    logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "Connection Drops: %u", current_quality.connection_drops);
+    logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "Current RSSI: %d dBm", current_quality.rssi);
+    logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "Network Stability: %.2f", current_quality.stability_score);
+    logger->log(LogLevel::LOG_INFO, "NetworkManager", __FILE__, __LINE__, "==========================");
 }
 
 bool NetworkManager::validateConnection() const {
@@ -517,8 +522,11 @@ bool NetworkManager::validateConnection() const {
         return false;
     }
     
-    if (server_connected && !client.connected()) {
-        return false;
+    if (server_connected) {
+        WiFiClient& mutable_client = const_cast<WiFiClient&>(client);
+        if (!mutable_client.connected()) {
+            return false;
+        }
     }
     
     return true;

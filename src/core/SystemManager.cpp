@@ -110,17 +110,17 @@ bool SystemManager::initialize() {
 }
 
 bool SystemManager::initializeEventBus() {
-    event_bus = std::unique_ptr<EventBus>();
+    event_bus = std::unique_ptr<EventBus>(new EventBus());
     if (!event_bus->initialize()) {
         return false;
     }
     
-    logger->info( "SystemManager", "EventBus initialized");
+    logger->info("SystemManager", "EventBus initialized");
     return true;
 }
 
 bool SystemManager::initializeStateMachine() {
-    state_machine = std::unique_ptr<StateMachine>();
+    state_machine = std::unique_ptr<StateMachine>(new StateMachine());
     if (!state_machine->initialize()) {
         return false;
     }
@@ -129,32 +129,32 @@ bool SystemManager::initializeStateMachine() {
     state_machine->onStateChange([this](SystemState from, SystemState to, StateTransitionReason reason) {
         context.previous_state = from;
         context.current_state = to;
-        logger->info( "SystemManager", "State transition from %d to %d",
-                   static_cast<int>(from),
-                   static_cast<int>(to));
+        logger->info("SystemManager", "State transition from %d to %d",
+                     static_cast<int>(from),
+                     static_cast<int>(to));
     });
     
-    logger->info( "SystemManager", "StateMachine initialized");
+    logger->info("SystemManager", "StateMachine initialized");
     return true;
 }
 
 bool SystemManager::initializeAudioProcessor() {
-    audio_processor = std::unique_ptr<AudioProcessor>();
+    audio_processor = std::unique_ptr<AudioProcessor>(new AudioProcessor());
     if (!audio_processor->initialize()) {
         return false;
     }
     
-    logger->info( "SystemManager", "AudioProcessor initialized");
+    logger->info("SystemManager", "AudioProcessor initialized");
     return true;
 }
 
 bool SystemManager::initializeNetworkManager() {
-    network_manager = std::unique_ptr<NetworkManager>();
+    network_manager = std::unique_ptr<NetworkManager>(new NetworkManager());
     if (!network_manager->initialize()) {
         return false;
     }
     
-    logger->info( "SystemManager", "NetworkManager initialized");
+    logger->info("SystemManager", "NetworkManager initialized");
     return true;
 }
 

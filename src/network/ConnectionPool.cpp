@@ -1,5 +1,6 @@
 #include "ConnectionPool.h"
 #include "../utils/EnhancedLogger.h"
+#include "../core/SystemManager.h"
 
 ConnectionPool::ConnectionPool() 
     : primary_connection_id(0), backup_connection_id(1),
@@ -8,7 +9,7 @@ ConnectionPool::ConnectionPool()
       total_reconnects(0), failovers(0) {
     
     for (uint8_t i = 0; i < MAX_CONNECTIONS; i++) {
-        connections.push_back(std::make_shared<PooledConnection>());
+        connections.push_back(std::unique_ptr<PooledConnection>(new PooledConnection()));
         connections[i]->id = i;
     }
 }
@@ -245,10 +246,11 @@ bool ConnectionPool::isConnectionActive(uint8_t connection_id) {
            (conn->state == ConnectionState::CONNECTED || conn->state == ConnectionState::BACKUP);
 }
 
-uint8_t ConnectionPool::getActiveConnectionCount() {
+uint8_t ConnectionPool::getActiveConnectionCount() const {
     uint8_t count = 0;
     for (const auto& conn : connections) {
-        if (conn->client.connected()) {
+        WiFiClient& mutable_client = const_cast<WiFiClient&>(conn->client);
+        if (mutable_client.connected()) {
             count++;
         }
     }
@@ -267,7 +269,8 @@ void ConnectionPool::updateConnectionHealth() {
 }
 
 bool ConnectionPool::isConnectionHealthy(const PooledConnection& conn) {
-    if (!conn.client.connected()) {
+    WiFiClient& client = const_cast<WiFiClient&>(conn.client);
+    if (!client.connected()) {
         return false;
     }
     
@@ -290,17 +293,19 @@ void ConnectionPool::performHealthCheck() {
 }
 
 void ConnectionPool::printPoolStatus() const {
-    EnhancedLogger& logger = EnhancedLogger::getInstance();
+    EnhancedLogger* logger = SystemManager::getInstance().getLogger();
 
-    logger.log(LogLevel::LOG_INFO, "ConnectionPool", __FILE__, __LINE__, "=== Connection Pool Status ===");
-    logger.log(LogLevel::LOG_INFO, "ConnectionPool", __FILE__, __LINE__, "Active Connections: %u", getActiveConnectionCount());
-    logger.log(LogLevel::LOG_INFO, "ConnectionPool", __FILE__, __LINE__, "Total Reconnects: %u", total_reconnects);
-    logger.log(LogLevel::LOG_INFO, "ConnectionPool", __FILE__, __LINE__, "Failovers: %u", failovers);
+    if (logger) {
+        logger->log(LogLevel::LOG_INFO, "ConnectionPool", __FILE__, __LINE__, "=== Connection Pool Status ===");
+        logger->log(LogLevel::LOG_INFO, "ConnectionPool", __FILE__, __LINE__, "Active Connections: %u", getActiveConnectionCount());
+        logger->log(LogLevel::LOG_INFO, "ConnectionPool", __FILE__, __LINE__, "Total Reconnects: %u", total_reconnects);
+        logger->log(LogLevel::LOG_INFO, "ConnectionPool", __FILE__, __LINE__, "Failovers: %u", failovers);
 
-    for (size_t i = 0; i < connections.size(); i++) {
-        const auto& conn = connections[i];
-        logger.log(LogLevel::LOG_INFO, "ConnectionPool", __FILE__, __LINE__, "Connection %u: State=%d, Errors=%u, Sent=%u, Received=%u",
-                  i, static_cast<int>(conn->state), conn->error_count,
-                  conn->bytes_sent, conn->bytes_received);
+        for (size_t i = 0; i < connections.size(); i++) {
+            const auto& conn = connections[i];
+            logger->log(LogLevel::LOG_INFO, "ConnectionPool", __FILE__, __LINE__, "Connection %u: State=%d, Errors=%u, Sent=%u, Received=%u",
+                      i, static_cast<int>(conn->state), conn->error_count,
+                      conn->bytes_sent, conn->bytes_received);
+        }
     }
 }

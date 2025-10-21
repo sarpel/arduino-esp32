@@ -165,20 +165,29 @@ public:
 // Global logger access
 #define ENHANCED_LOGGER() (SystemManager::getInstance().getLogger())
 
-// Convenience macros
+// Convenience macros ensure null safety and consistent metadata
+#define LOG_WITH_COMPONENT(level, component, fmt, ...)                           \
+    do {                                                                         \
+        EnhancedLogger* _logger_instance = ENHANCED_LOGGER();                    \
+        if (_logger_instance) {                                                  \
+            _logger_instance->log(level, component, __FILE__, __LINE__, fmt,     \
+                                  ##__VA_ARGS__);                               \
+        }                                                                        \
+    } while (0)
+
 #define LOG_DEBUG_COMP(component, fmt, ...) \
-    ENHANCED_LOGGER()->log(LOG_DEBUG, component, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+    LOG_WITH_COMPONENT(LogLevel::LOG_DEBUG, component, fmt, ##__VA_ARGS__)
 
 #define LOG_INFO_COMP(component, fmt, ...) \
-    ENHANCED_LOGGER()->log(LOG_INFO, component, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+    LOG_WITH_COMPONENT(LogLevel::LOG_INFO, component, fmt, ##__VA_ARGS__)
 
 #define LOG_WARN_COMP(component, fmt, ...) \
-    ENHANCED_LOGGER()->log(LOG_WARN, component, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+    LOG_WITH_COMPONENT(LogLevel::LOG_WARN, component, fmt, ##__VA_ARGS__)
 
 #define LOG_ERROR_COMP(component, fmt, ...) \
-    ENHANCED_LOGGER()->log(LOG_ERROR, component, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+    LOG_WITH_COMPONENT(LogLevel::LOG_ERROR, component, fmt, ##__VA_ARGS__)
 
 #define LOG_CRITICAL_COMP(component, fmt, ...) \
-    ENHANCED_LOGGER()->log(LOG_CRITICAL, component, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+    LOG_WITH_COMPONENT(LogLevel::LOG_CRITICAL, component, fmt, ##__VA_ARGS__)
 
 #endif // ENHANCED_LOGGER_H

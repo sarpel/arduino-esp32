@@ -1,5 +1,6 @@
 #include "NetworkSimulator.h"
 #include "../utils/EnhancedLogger.h"
+#include "../core/SystemManager.h"
 #include <cmath>
 #include <algorithm>
 
@@ -210,23 +211,23 @@ void NetworkSimulator::reset() {
 }
 
 void NetworkSimulator::printSimulationStatus() const {
-    EnhancedLogger& logger = EnhancedLogger::getInstance();
+    EnhancedLogger* logger = SystemManager::getInstance().getLogger();
 
-    logger.log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "=== Network Simulator Status ===");
-    logger.log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "Enabled: %s", enabled ? "Yes" : "No");
-    logger.log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "Initialized: %s", initialized ? "Yes" : "No");
-    logger.log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "Condition: %d", static_cast<int>(current_condition));
-    logger.log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "");
-    logger.log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "=== Simulation Parameters ===");
-    logger.log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "RSSI: %d dBm", params.rssi);
-    logger.log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "Packet Loss: %.2f%%", params.packet_loss_percent);
-    logger.log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "Latency: %d ms", params.latency_ms);
-    logger.log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "Jitter: %.2f%%", params.jitter_percent);
-    logger.log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "Bandwidth: %.2f kbps", params.bandwidth_kbps);
-    logger.log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "");
-    logger.log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "=== Statistics ===");
-    logger.log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "Packets Dropped: %u", packets_dropped);
-    logger.log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "Packets Processed: %u", packets_processed);
-    logger.log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "Average Latency: %.2f ms", getAverageLatency());
-    logger.log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "Pending Packets: %u", static_cast<uint32_t>(delayed_packets.size()));
+    logger->log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "=== Network Simulator Status ===");
+    logger->log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "Enabled: %s", enabled ? "Yes" : "No");
+    logger->log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "Initialized: %s", initialized ? "Yes" : "No");
+    logger->log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "Condition: %d", static_cast<int>(current_condition));
+    logger->log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "");
+    logger->log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "=== Simulation Parameters ===");
+    logger->log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "RSSI: %d dBm", params.rssi);
+    logger->log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "Packet Loss: %.2f%%", params.packet_loss_percent);
+    logger->log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "Latency: %d ms", params.latency_ms);
+    logger->log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "Jitter: %.2f%%", params.jitter_percent);
+    logger->log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "Bandwidth: %.2f kbps", params.bandwidth_kbps);
+    logger->log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "");
+    logger->log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "=== Statistics ===");
+    logger->log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "Packets Dropped: %u", packets_dropped);
+    logger->log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "Packets Processed: %u", packets_processed);
+    logger->log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "Average Latency: %.2f ms", getAverageLatency());
+    logger->log(LogLevel::LOG_INFO, "NetworkSimulator", __FILE__, __LINE__, "Pending Packets: %u", static_cast<uint32_t>(delayed_packets.size()));
 }

@@ -404,3 +404,31 @@ void emergencyHandler() {
     // It will set the emergency stop flag
     emergencyStop = true;
 }
+
+void printSystemStatus() {
+    Serial.println("=== System Status ===");
+    Serial.printf("Uptime: %lu ms\n", millis() - systemStartupTime);
+    if (systemManager.getEventBus()) {
+        systemManager.getEventBus()->printStatistics();
+    }
+    Serial.println("====================");
+}
+
+void printDetailedStatistics() {
+    Serial.println("=== Detailed Statistics ===");
+    if (systemManager.getEventBus()) {
+        systemManager.getEventBus()->printStatistics();
+    }
+    if (systemManager.getAudioProcessor()) {
+        systemManager.getAudioProcessor()->printStatistics();
+    }
+    Serial.println("===========================");
+}
+
+void printStateInfo() {
+    Serial.println("=== State Information ===");
+    if (systemManager.getStateMachine()) {
+        Serial.println("State Machine available");
+    }
+    Serial.println("========================");
+}

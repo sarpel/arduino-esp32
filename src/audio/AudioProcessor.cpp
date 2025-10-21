@@ -216,9 +216,7 @@ void AutomaticGainControl::reset() {
     envelope = 0.0f;
 }
 
-void AutomaticGainControl::setTargetLevel(float target) {
-    target_level = std::max(0.01f, std::min(1.0f, target));
-}
+
 
 // VoiceActivityDetector implementation
 VoiceActivityDetector::VoiceActivityDetector()

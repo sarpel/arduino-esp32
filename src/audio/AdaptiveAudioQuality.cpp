@@ -1,5 +1,6 @@
 #include "AdaptiveAudioQuality.h"
 #include "../utils/EnhancedLogger.h"
+#include "../core/SystemManager.h"
 
 AdaptiveAudioQuality::AdaptiveAudioQuality() 
     : network_manager(nullptr), audio_processor(nullptr),
@@ -253,16 +254,16 @@ const char* AdaptiveAudioQuality::getConditionName(NetworkCondition condition) c
 }
 
 void AdaptiveAudioQuality::printCurrentStatus() const {
-    EnhancedLogger& logger = EnhancedLogger::getInstance();
+    EnhancedLogger* logger = SystemManager::getInstance().getLogger();
 
-    logger.log(LogLevel::LOG_INFO, "AdaptiveAudioQuality", __FILE__, __LINE__, "=== Adaptive Audio Quality Status ===");
-    logger.log(LogLevel::LOG_INFO, "AdaptiveAudioQuality", __FILE__, __LINE__, "Enabled: %s", enabled ? "Yes" : "No");
-    logger.log(LogLevel::LOG_INFO, "AdaptiveAudioQuality", __FILE__, __LINE__, "Mode: %d", static_cast<int>(mode));
-    logger.log(LogLevel::LOG_INFO, "AdaptiveAudioQuality", __FILE__, __LINE__, "Current Condition: %s", getConditionName(current_condition));
-    logger.log(LogLevel::LOG_INFO, "AdaptiveAudioQuality", __FILE__, __LINE__, "Quality Level: %d", static_cast<int>(current_profile.target_quality));
-    logger.log(LogLevel::LOG_INFO, "AdaptiveAudioQuality", __FILE__, __LINE__, "Sample Rate: %u Hz", current_profile.sample_rate);
-    logger.log(LogLevel::LOG_INFO, "AdaptiveAudioQuality", __FILE__, __LINE__, "Bit Depth: %u bits", current_profile.bit_depth);
-    logger.log(LogLevel::LOG_INFO, "AdaptiveAudioQuality", __FILE__, __LINE__, "Compression Ratio: %.1f:1", current_profile.compression_ratio);
-    logger.log(LogLevel::LOG_INFO, "AdaptiveAudioQuality", __FILE__, __LINE__, "Adaptations: %u", adaptation_count);
-    logger.log(LogLevel::LOG_INFO, "AdaptiveAudioQuality", __FILE__, __LINE__, "Condition Changes: %u", condition_change_count);
+    logger->log(LogLevel::LOG_INFO, "AdaptiveAudioQuality", __FILE__, __LINE__, "=== Adaptive Audio Quality Status ===");
+    logger->log(LogLevel::LOG_INFO, "AdaptiveAudioQuality", __FILE__, __LINE__, "Enabled: %s", enabled ? "Yes" : "No");
+    logger->log(LogLevel::LOG_INFO, "AdaptiveAudioQuality", __FILE__, __LINE__, "Mode: %d", static_cast<int>(mode));
+    logger->log(LogLevel::LOG_INFO, "AdaptiveAudioQuality", __FILE__, __LINE__, "Current Condition: %s", getConditionName(current_condition));
+    logger->log(LogLevel::LOG_INFO, "AdaptiveAudioQuality", __FILE__, __LINE__, "Quality Level: %d", static_cast<int>(current_profile.target_quality));
+    logger->log(LogLevel::LOG_INFO, "AdaptiveAudioQuality", __FILE__, __LINE__, "Sample Rate: %u Hz", current_profile.sample_rate);
+    logger->log(LogLevel::LOG_INFO, "AdaptiveAudioQuality", __FILE__, __LINE__, "Bit Depth: %u bits", current_profile.bit_depth);
+    logger->log(LogLevel::LOG_INFO, "AdaptiveAudioQuality", __FILE__, __LINE__, "Compression Ratio: %.1f:1", current_profile.compression_ratio);
+    logger->log(LogLevel::LOG_INFO, "AdaptiveAudioQuality", __FILE__, __LINE__, "Adaptations: %u", adaptation_count);
+    logger->log(LogLevel::LOG_INFO, "AdaptiveAudioQuality", __FILE__, __LINE__, "Condition Changes: %u", condition_change_count);
 }

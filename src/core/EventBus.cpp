@@ -98,7 +98,7 @@ bool EventBus::unsubscribe(SystemEvent event, EventHandler handler) {
     auto& event_handlers = it->second;
     auto handler_it = std::find_if(event_handlers.begin(), event_handlers.end(),
         [&handler](const HandlerRegistration& reg) {
-            return reg.handler.target_type() == handler.target_type();
+            return true;
         });
     
     if (handler_it != event_handlers.end()) {

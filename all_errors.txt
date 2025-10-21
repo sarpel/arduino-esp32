@@ -1,0 +1,15 @@
+src/core/EventBus.cpp:101:32: error: 'const EventHandler' {aka 'const class std::function<void(const void*)>'} has no member named 'target_type'; did you mean 'argument_type'?
+src/core/EventBus.cpp:101:57: error: 'EventHandler' {aka 'class std::function<void(const void*)>'} has no member named 'target_type'; did you mean 'argument_type'?
+c:\users\sarpel\.platformio\packages\toolchain-xtensa-esp32\xtensa-esp32-elf\include\c++\8.4.0\bits\predefined_ops.h:283:11: error: void value not ignored as it ought to be
+src/network/ConnectionPool.cpp:12:67: error: no matching function for call to 'std::vector<std::unique_ptr<PooledConnection> >::push_back(std::shared_ptr<PooledConnection>)'
+src/network/ConnectionPool.cpp:271:32: error: passing 'const WiFiClient' as 'this' argument discards qualifiers [-fpermissive]
+src/network/ConnectionPool.cpp:297:126: error: passing 'const ConnectionPool' as 'this' argument discards qualifiers [-fpermissive]
+src/utils/MemoryManager.cpp:431:6: error: no declaration matches 'bool MemoryManager::shouldDefragment() const'
+c:\users\sarpel\.platformio\packages\toolchain-xtensa-esp32\xtensa-esp32-elf\include\c++\8.4.0\tuple:1668:70: error: no matching function for call to 'StateConfig::StateConfig()'
+src/network/NetworkManager.cpp:521:47: error: passing 'const WiFiClient' as 'this' argument discards qualifiers [-fpermissive]
+src/monitoring/HealthMonitor.cpp:78:88: error: inconsistent types 'String' and 'StringSumHelper' deduced for lambda return type
+src/monitoring/HealthMonitor.cpp:112:91: error: inconsistent types 'String' and 'StringSumHelper' deduced for lambda return type
+src/monitoring/HealthMonitor.cpp:129:94: error: inconsistent types 'String' and 'StringSumHelper' deduced for lambda return type
+src/monitoring/HealthMonitor.cpp:218:25: error: invalid use of incomplete type 'class EventBus'
+src/monitoring/HealthMonitor.cpp:407:21: error: invalid use of incomplete type 'class EventBus'
+src/utils/ConfigManager.cpp:278:50: error: passing 'const ConfigManager' as 'this' argument discards qualifiers [-fpermissive]

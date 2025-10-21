@@ -31,6 +31,7 @@ public:
     size_t getFreeBlocks() const { return free_blocks; }
     size_t getTotalBlocks() const { return pool_size; }
     size_t getBlockSize() const { return block_size; }
+    bool owns(void* ptr) const;
 };
 
 // Memory allocation statistics
@@ -97,7 +98,7 @@ private:
     void* allocateFromHeap(size_t size, const char* source);
     void recordAllocation(void* ptr, size_t size, const char* source);
     void recordDeallocation(void* ptr);
-    bool shouldDefragment();
+    bool shouldDefragment() const;
     void performDefragmentation();
     void enterEmergencyMode();
     void exitEmergencyMode();
