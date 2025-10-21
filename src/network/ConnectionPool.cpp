@@ -291,16 +291,16 @@ void ConnectionPool::performHealthCheck() {
 
 void ConnectionPool::printPoolStatus() const {
     EnhancedLogger& logger = EnhancedLogger::getInstance();
-    
-    logger.log(LogLevel::LOG_INFO, "=== Connection Pool Status ===");
-    logger.log(LogLevel::LOG_INFO, "Active Connections: %u", getActiveConnectionCount());
-    logger.log(LogLevel::LOG_INFO, "Total Reconnects: %u", total_reconnects);
-    logger.log(LogLevel::LOG_INFO, "Failovers: %u", failovers);
-    
+
+    logger.log(LogLevel::LOG_INFO, "ConnectionPool", __FILE__, __LINE__, "=== Connection Pool Status ===");
+    logger.log(LogLevel::LOG_INFO, "ConnectionPool", __FILE__, __LINE__, "Active Connections: %u", getActiveConnectionCount());
+    logger.log(LogLevel::LOG_INFO, "ConnectionPool", __FILE__, __LINE__, "Total Reconnects: %u", total_reconnects);
+    logger.log(LogLevel::LOG_INFO, "ConnectionPool", __FILE__, __LINE__, "Failovers: %u", failovers);
+
     for (size_t i = 0; i < connections.size(); i++) {
         const auto& conn = connections[i];
-        logger.log(LogLevel::LOG_INFO, "Connection %u: State=%d, Errors=%u, Sent=%u, Received=%u",
-                  i, static_cast<int>(conn->state), conn->error_count, 
+        logger.log(LogLevel::LOG_INFO, "ConnectionPool", __FILE__, __LINE__, "Connection %u: State=%d, Errors=%u, Sent=%u, Received=%u",
+                  i, static_cast<int>(conn->state), conn->error_count,
                   conn->bytes_sent, conn->bytes_received);
     }
 }

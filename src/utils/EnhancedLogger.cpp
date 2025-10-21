@@ -336,44 +336,44 @@ void EnhancedLogger::printStatistics() const {
     auto logger = SystemManager::getInstance().getLogger();
     if (!logger) return;
     
-    logger->log(LOG_INFO, "EnhancedLogger", "=== Logger Statistics ===");
-    logger->log(LOG_INFO, "EnhancedLogger", "Messages logged: %u", stats.messages_logged);
-    logger->log(LOG_INFO, "EnhancedLogger", "Messages filtered: %u", stats.messages_filtered);
-    logger->log(LOG_INFO, "EnhancedLogger", "Messages dropped: %u", stats.messages_dropped);
+    logger->log(LogLevel::LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "=== Logger Statistics ===");
+    logger->log(LogLevel::LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "Messages logged: %u", stats.messages_logged);
+    logger->log(LogLevel::LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "Messages filtered: %u", stats.messages_filtered);
+    logger->log(LogLevel::LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "Messages dropped: %u", stats.messages_dropped);
     
-    logger->log(LOG_INFO, "EnhancedLogger", "--- Level Counts ---");
+    logger->log(LogLevel::LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "--- Level Counts ---");
     for (const auto& pair : stats.level_counts) {
-        logger->log(LOG_INFO, "EnhancedLogger", "%s: %u", getLevelName(pair.first), pair.second);
+        logger->log(LogLevel::LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "%s: %u", getLevelName(pair.first), pair.second);
     }
     
-    logger->log(LOG_INFO, "EnhancedLogger", "--- Output Counts ---");
+    logger->log(LogLevel::LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "--- Output Counts ---");
     for (const auto& pair : stats.output_counts) {
-        logger->log(LOG_INFO, "EnhancedLogger", "%s: %u", getOutputName(pair.first), pair.second);
+        logger->log(LogLevel::LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "%s: %u", getOutputName(pair.first), pair.second);
     }
     
-    logger->log(LOG_INFO, "EnhancedLogger", "======================");
+    logger->log(LogLevel::LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "======================");
 }
 
 void EnhancedLogger::printOutputs() const {
     auto logger = SystemManager::getInstance().getLogger();
     if (!logger) return;
     
-    logger->log(LOG_INFO, "EnhancedLogger", "=== Logger Outputs ===");
+    logger->log(LogLevel::LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "=== Logger Outputs ===");
     for (const auto& output : outputs) {
-        logger->log(LOG_INFO, "EnhancedLogger", "%s: %s (min: %s, max: %s)",
+        logger->log(LogLevel::LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "%s: %s (min: %s, max: %s)",
                    getOutputName(output.type), output.enabled ? "enabled" : "disabled",
                    getLevelName(output.min_level), getLevelName(output.max_level));
     }
-    logger->log(LOG_INFO, "EnhancedLogger", "=====================");
+    logger->log(LogLevel::LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "=====================");
 }
 
 void EnhancedLogger::printFilters() const {
     auto logger = SystemManager::getInstance().getLogger();
     if (!logger) return;
     
-    logger->log(LOG_INFO, "EnhancedLogger", "=== Logger Filters ===");
-    logger->log(LOG_INFO, "EnhancedLogger", "Active filters: %u", filters.size());
-    logger->log(LOG_INFO, "EnhancedLogger", "=====================");
+    logger->log(LogLevel::LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "=== Logger Filters ===");
+    logger->log(LogLevel::LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "Active filters: %u", filters.size());
+    logger->log(LogLevel::LOG_INFO, "EnhancedLogger", __FILE__, __LINE__, "=====================");
 }
 
 bool EnhancedLogger::isRateLimited() const {
@@ -381,8 +381,8 @@ bool EnhancedLogger::isRateLimited() const {
     
     // Reset counter if new second
     if (current_time - last_message_time >= 1000) {
-        messages_this_second = 0;
-        last_message_time = current_time;
+        const_cast<EnhancedLogger*>(this)->messages_this_second = 0;
+        const_cast<EnhancedLogger*>(this)->last_message_time = current_time;
     }
     
     return messages_this_second >= max_messages_per_second;
@@ -418,7 +418,7 @@ void EnhancedLogger::debug(const char* component, const char* format, ...) {
     vsnprintf(message_buffer, sizeof(message_buffer), format, args);
     va_end(args);
     
-    log(LOG_DEBUG, component, __FILE__, __LINE__, "%s", message_buffer);
+    log(LogLevel::LOG_DEBUG, component, __FILE__, __LINE__, "%s", message_buffer);
 }
 
 void EnhancedLogger::info(const char* component, const char* format, ...) {
@@ -428,7 +428,7 @@ void EnhancedLogger::info(const char* component, const char* format, ...) {
     vsnprintf(message_buffer, sizeof(message_buffer), format, args);
     va_end(args);
     
-    log(LOG_INFO, component, __FILE__, __LINE__, "%s", message_buffer);
+    log(LogLevel::LOG_INFO, component, __FILE__, __LINE__, "%s", message_buffer);
 }
 
 void EnhancedLogger::warn(const char* component, const char* format, ...) {
@@ -438,7 +438,7 @@ void EnhancedLogger::warn(const char* component, const char* format, ...) {
     vsnprintf(message_buffer, sizeof(message_buffer), format, args);
     va_end(args);
     
-    log(LOG_WARN, component, __FILE__, __LINE__, "%s", message_buffer);
+    log(LogLevel::LOG_WARN, component, __FILE__, __LINE__, "%s", message_buffer);
 }
 
 void EnhancedLogger::error(const char* component, const char* format, ...) {
@@ -448,7 +448,7 @@ void EnhancedLogger::error(const char* component, const char* format, ...) {
     vsnprintf(message_buffer, sizeof(message_buffer), format, args);
     va_end(args);
     
-    log(LOG_ERROR, component, __FILE__, __LINE__, "%s", message_buffer);
+    log(LogLevel::LOG_ERROR, component, __FILE__, __LINE__, "%s", message_buffer);
 }
 
 void EnhancedLogger::critical(const char* component, const char* format, ...) {
@@ -458,5 +458,5 @@ void EnhancedLogger::critical(const char* component, const char* format, ...) {
     vsnprintf(message_buffer, sizeof(message_buffer), format, args);
     va_end(args);
     
-    log(LOG_CRITICAL, component, __FILE__, __LINE__, "%s", message_buffer);
+    log(LogLevel::LOG_CRITICAL, component, __FILE__, __LINE__, "%s", message_buffer);
 }

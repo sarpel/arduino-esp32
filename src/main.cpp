@@ -1,3 +1,7 @@
+#ifndef LED_BUILTIN
+    #define LED_BUILTIN 2  // GPIO2 is typically the built-in LED on ESP32
+#endif
+
 #include <Arduino.h>
 #include "core/SystemManager.h"
 #include "core/EventBus.h"
@@ -21,6 +25,16 @@ void handleSerialCommands();
 void printSystemBanner();
 void printSystemInfo();
 void emergencyHandler();
+
+// Print function declarations
+void printSystemStatus();
+void printDetailedStatistics();
+void printStateInfo();
+void printMemoryInfo();
+void printAudioInfo();
+void printNetworkInfo();
+void printHealthInfo();
+void printEventInfo();
 
 // Emergency flag
 volatile bool emergencyStop = false;
@@ -135,14 +149,14 @@ void handleSystemEvents() {
     eventBus->subscribe(SystemEvent::SYSTEM_ERROR, [](const void* data) {
         Serial.println("[ERROR] System error detected!");
         // Additional error handling can be added here
-    }, EventPriority::CRITICAL, "main");
+    }, EventPriority::CRITICAL_PRIORITY, "main");
     
     // Memory critical events
     eventBus->subscribe(SystemEvent::MEMORY_CRITICAL, [](const void* data) {
         Serial.println("[CRITICAL] Memory critical situation!");
         // Emergency memory cleanup
         systemManager.getMemoryManager()->emergencyCleanup();
-    }, EventPriority::CRITICAL, "main");
+    }, EventPriority::CRITICAL_PRIORITY, "main");
     
     // Network disconnection events
     eventBus->subscribe(SystemEvent::NETWORK_DISCONNECTED, [](const void* data) {
@@ -161,7 +175,7 @@ void handleSystemEvents() {
     // Audio quality events
     eventBus->subscribe(SystemEvent::AUDIO_QUALITY_DEGRADED, [](const void* data) {
         Serial.println("[WARN] Audio quality degraded!");
-    }, EventPriority::NORMAL, "main");
+    }, EventPriority::NORMAL_PRIORITY, "main");
     
     // CPU overload events
     eventBus->subscribe(SystemEvent::CPU_OVERLOAD, [](const void* data) {
@@ -301,80 +315,19 @@ void handleSerialCommands() {
     }
 }
 
-void printSystemStatus() {
-    Serial.println("=== System Status ===");
-    
-    // Basic system info
-    unsigned long uptime = millis() - systemStartupTime;
-    Serial.printf("Uptime: %lu seconds (%.1f hours)\n", uptime / 1000, uptime / 3600000.0);
-    Serial.printf("Free Memory: %u bytes\n", ESP.getFreeHeap());
-    Serial.printf("CPU Frequency: %u MHz\n", ESP.getCpuFreqMHz());
-    
-    // State information
-    SystemState currentState = systemManager.getCurrentState();
-    Serial.printf("Current State: %s\n", systemManager.getStateMachine()->getCurrentStateName().c_str());
-    Serial.printf("State Duration: %lu ms\n", systemManager.getStateMachine()->getStateDuration());
-    
-    // Audio information
-    if (systemManager.getAudioProcessor()) {
-        Serial.printf("Audio Quality Score: %.2f\n", systemManager.getAudioProcessor()->getAudioQualityScore());
-        Serial.printf("Audio Input Level: %.2f dB\n", 20.0f * log10f(systemManager.getAudioProcessor()->getInputLevel() + 0.001f));
-        Serial.printf("Audio Output Level: %.2f dB\n", 20.0f * log10f(systemManager.getAudioProcessor()->getOutputLevel() + 0.001f));
-        Serial.printf("Voice Active: %s\n", systemManager.getAudioProcessor()->isVoiceActive() ? "yes" : "no");
-    }
-    
-    // Network information
-    if (systemManager.getNetworkManager()) {
-        Serial.printf("WiFi Connected: %s\n", systemManager.getNetworkManager()->isWiFiConnected() ? "yes" : "no");
-        if (systemManager.getNetworkManager()->isWiFiConnected()) {
-            Serial.printf("WiFi RSSI: %d dBm\n", systemManager.getNetworkManager()->getWiFiRSSI());
+// ESP32 API compatibility helper
+static uint8_t getHeapFragmentation() {
+    #if defined(ESP32)
+        // ESP32 doesn't have getHeapFragmentation() - calculate it
+        size_t free_heap = ESP.getFreeHeap();
+        size_t largest_block = ESP.getMaxAllocHeap();
+        if (free_heap > 0) {
+            return 100 - ((largest_block * 100) / free_heap);
         }
-        Serial.printf("Server Connected: %s\n", systemManager.getNetworkManager()->isServerConnected() ? "yes" : "no");
-    }
-    
-    // Health information
-    if (systemManager.getHealthMonitor()) {
-        auto health = systemManager.getHealthMonitor()->checkSystemHealth();
-        Serial.printf("System Health Score: %.2f\n", health.overall_score);
-        Serial.printf("CPU Load: %.1f%%\n", health.cpu_load_percent);
-        Serial.printf("Memory Pressure: %.2f\n", health.memory_pressure);
-        Serial.printf("Network Stability: %.2f\n", health.network_stability);
-    }
-    
-    Serial.println("====================");
-}
-
-void printDetailedStatistics() {
-    Serial.println("=== Detailed Statistics ===");
-    
-    // System statistics
-    const auto& context = systemManager.getContext();
-    Serial.printf("Total Cycles: %u\n", context.cycle_count);
-    Serial.printf("Bytes Sent: %u\n", context.bytes_sent);
-    Serial.printf("Audio Samples Processed: %u\n", context.audio_samples_processed);
-    Serial.printf("Total Errors: %u\n", context.total_errors);
-    Serial.printf("Fatal Errors: %u\n", context.fatal_errors);
-    
-    // Print component-specific statistics
-    if (systemManager.getAudioProcessor()) {
-        systemManager.getAudioProcessor()->printStatistics();
-    }
-    
-    if (systemManager.getEventBus()) {
-        systemManager.getEventBus()->printStatistics();
-    }
-    
-    if (systemManager.getStateMachine()) {
-        systemManager.getStateMachine()->printStatistics();
-    }
-    
-    Serial.println("==========================");
-}
-
-void printStateInfo() {
-    Serial.println("=== State Information ===");
-    systemManager.getStateMachine()->printCurrentState();
-    Serial.println("========================");
+        return 0;
+    #else
+        return ESP.getHeapFragmentation();
+    #endif
 }
 
 void printMemoryInfo() {
@@ -382,7 +335,7 @@ void printMemoryInfo() {
     Serial.printf("Free Heap: %u bytes\n", ESP.getFreeHeap());
     Serial.printf("Total Heap: %u bytes\n", ESP.getHeapSize());
     Serial.printf("Used Heap: %u bytes\n", ESP.getHeapSize() - ESP.getFreeHeap());
-    Serial.printf("Heap Fragmentation: %u%%\n", ESP.getHeapFragmentation());
+    Serial.printf("Heap Fragmentation: %u%%\n", getHeapFragmentation());
     Serial.printf("Largest Free Block: %u bytes\n", ESP.getMaxAllocHeap());
     Serial.printf("Minimum Free Heap: %u bytes\n", ESP.getMinFreeHeap());
     

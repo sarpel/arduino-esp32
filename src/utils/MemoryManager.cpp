@@ -2,6 +2,7 @@
 #include "../core/SystemManager.h"
 #include "EnhancedLogger.h"
 #include <memory>
+#include "../core/EventBus.h"
 
 // MemoryPool implementation
 MemoryPool::MemoryPool(size_t block_size, size_t pool_size)
@@ -78,7 +79,7 @@ bool MemoryManager::initialize(const MemoryConfig& cfg) {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "MemoryManager", "Initializing MemoryManager");
+        logger->log(LogLevel::LOG_INFO, "MemoryManager", "Initializing MemoryManager");
     }
     
     // Calculate pool sizes based on typical usage
@@ -98,12 +99,12 @@ bool MemoryManager::initialize(const MemoryConfig& cfg) {
     emergency_mode = false;
     
     if (logger) {
-        logger->log(LOG_INFO, "MemoryManager", "Memory pools initialized:");
-        logger->log(LOG_INFO, "MemoryManager", "  Audio pool: %u blocks of %u bytes",
+        logger->log(LogLevel::LOG_INFO, "MemoryManager", "Memory pools initialized:");
+        logger->log(LogLevel::LOG_INFO, "MemoryManager", "  Audio pool: %u blocks of %u bytes",
                    config.audio_buffer_pool_size, audio_buffer_size);
-        logger->log(LOG_INFO, "MemoryManager", "  Network pool: %u blocks of %u bytes",
+        logger->log(LogLevel::LOG_INFO, "MemoryManager", "  Network pool: %u blocks of %u bytes",
                    config.network_buffer_pool_size, network_buffer_size);
-        logger->log(LOG_INFO, "MemoryManager", "  General pool: 10 blocks of %u bytes", general_buffer_size);
+        logger->log(LogLevel::LOG_INFO, "MemoryManager", "  General pool: 10 blocks of %u bytes", general_buffer_size);
     }
     
     return true;
@@ -116,12 +117,12 @@ void MemoryManager::shutdown() {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "MemoryManager", "Shutting down MemoryManager");
+        logger->log(LogLevel::LOG_INFO, "MemoryManager", "Shutting down MemoryManager");
         printStatistics();
-        
+
         // Check for memory leaks
         if (stats.current_allocations > 0) {
-            logger->log(LOG_WARN, "MemoryManager", "Warning: %u allocations still active at shutdown",
+            logger->log(LogLevel::LOG_WARN, "MemoryManager", "Warning: %u allocations still active at shutdown",
                        stats.current_allocations);
             dumpAllocations();
         }
@@ -208,7 +209,7 @@ void* MemoryManager::allocate(size_t size, const char* source) {
     if (size > config.max_heap_allocation) {
         auto logger = SystemManager::getInstance().getLogger();
         if (logger) {
-            logger->log(LOG_ERROR, "MemoryManager", "Allocation size %u exceeds maximum %u",
+            logger->log(LogLevel::LOG_ERROR, "MemoryManager", "Allocation size %u exceeds maximum %u",
                        size, config.max_heap_allocation);
         }
         return nullptr;
@@ -237,7 +238,7 @@ void* MemoryManager::allocateFromHeap(size_t size, const char* source) {
         
         auto logger = SystemManager::getInstance().getLogger();
         if (logger) {
-            logger->log(LOG_ERROR, "MemoryManager", "Heap allocation failed for size %u from %s",
+            logger->log(LogLevel::LOG_ERROR, "MemoryManager", "Heap allocation failed for size %u from %s",
                        size, source);
         }
         
@@ -278,7 +279,7 @@ void MemoryManager::recordAllocation(void* ptr, size_t size, const char* source)
     if (getFreeMemory() < config.critical_memory_threshold) {
         auto logger = SystemManager::getInstance().getLogger();
         if (logger) {
-            logger->log(LOG_CRITICAL, "MemoryManager", "Critical memory condition - free: %u bytes",
+            logger->log(LogLevel::LOG_CRITICAL, "MemoryManager", "Critical memory condition - free: %u bytes",
                        getFreeMemory());
         }
         
@@ -337,7 +338,7 @@ void MemoryManager::emergencyCleanup() {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_CRITICAL, "MemoryManager", "Emergency cleanup initiated (#%u)", 
+        logger->log(LogLevel::LOG_CRITICAL, "MemoryManager", "Emergency cleanup initiated (#%u)",
                    emergency_cleanups);
     }
     
@@ -357,7 +358,7 @@ void MemoryManager::emergencyCleanup() {
     
     // Log results
     if (logger) {
-        logger->log(LOG_INFO, "MemoryManager", "Emergency cleanup completed - free memory: %u bytes",
+        logger->log(LogLevel::LOG_INFO, "MemoryManager", "Emergency cleanup completed - free memory: %u bytes",
                    getFreeMemory());
     }
     
@@ -369,7 +370,7 @@ void MemoryManager::enterEmergencyMode() {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_WARN, "MemoryManager", "Entering emergency memory mode");
+        logger->log(LogLevel::LOG_WARN, "MemoryManager", "Entering emergency memory mode");
     }
 }
 
@@ -378,7 +379,7 @@ void MemoryManager::exitEmergencyMode() {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "MemoryManager", "Exiting emergency memory mode");
+        logger->log(LogLevel::LOG_INFO, "MemoryManager", "Exiting emergency memory mode");
     }
 }
 
@@ -387,7 +388,7 @@ void MemoryManager::performDefragmentation() {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "MemoryManager", "Performing memory defragmentation");
+        logger->log(LogLevel::LOG_INFO, "MemoryManager", "Performing memory defragmentation");
     }
     
     // Simple defragmentation strategy
@@ -408,7 +409,7 @@ void MemoryManager::performDefragmentation() {
     }
     
     if (logger) {
-        logger->log(LOG_INFO, "MemoryManager", "Defragmentation completed");
+        logger->log(LogLevel::LOG_INFO, "MemoryManager", "Defragmentation completed");
     }
 }
 
@@ -430,22 +431,22 @@ void MemoryManager::printStatistics() const {
     auto logger = SystemManager::getInstance().getLogger();
     if (!logger) return;
     
-    logger->log(LOG_INFO, "MemoryManager", "=== Memory Manager Statistics ===");
-    logger->log(LOG_INFO, "MemoryManager", "Total allocations: %u", stats.total_allocations);
-    logger->log(LOG_INFO, "MemoryManager", "Total deallocations: %u", stats.total_deallocations);
-    logger->log(LOG_INFO, "MemoryManager", "Current allocations: %u", stats.current_allocations);
-    logger->log(LOG_INFO, "MemoryManager", "Peak allocations: %u", stats.peak_allocations);
-    logger->log(LOG_INFO, "MemoryManager", "Allocation failures: %u", stats.allocation_failures);
-    logger->log(LOG_INFO, "MemoryManager", "Pool allocations: %u", stats.pool_allocations);
-    logger->log(LOG_INFO, "MemoryManager", "Heap allocations: %u", stats.heap_allocations);
-    logger->log(LOG_INFO, "MemoryManager", "Total bytes allocated: %u", stats.total_bytes_allocated);
-    logger->log(LOG_INFO, "MemoryManager", "Current bytes allocated: %u", stats.current_bytes_allocated);
-    logger->log(LOG_INFO, "MemoryManager", "Peak bytes allocated: %u", stats.peak_bytes_allocated);
-    logger->log(LOG_INFO, "MemoryManager", "Emergency cleanups: %u", emergency_cleanups);
-    logger->log(LOG_INFO, "MemoryManager", "Defragmentation runs: %u", stats.defragmentation_runs);
-    logger->log(LOG_INFO, "MemoryManager", "Free memory: %u bytes", getFreeMemory());
-    logger->log(LOG_INFO, "MemoryManager", "Fragmentation ratio: %.1f%%", getFragmentationRatio() * 100);
-    logger->log(LOG_INFO, "MemoryManager", "================================");
+    logger->log(LogLevel::LOG_INFO, "MemoryManager", "=== Memory Manager Statistics ===");
+    logger->log(LogLevel::LOG_INFO, "MemoryManager", "Total allocations: %u", stats.total_allocations);
+    logger->log(LogLevel::LOG_INFO, "MemoryManager", "Total deallocations: %u", stats.total_deallocations);
+    logger->log(LogLevel::LOG_INFO, "MemoryManager", "Current allocations: %u", stats.current_allocations);
+    logger->log(LogLevel::LOG_INFO, "MemoryManager", "Peak allocations: %u", stats.peak_allocations);
+    logger->log(LogLevel::LOG_INFO, "MemoryManager", "Allocation failures: %u", stats.allocation_failures);
+    logger->log(LogLevel::LOG_INFO, "MemoryManager", "Pool allocations: %u", stats.pool_allocations);
+    logger->log(LogLevel::LOG_INFO, "MemoryManager", "Heap allocations: %u", stats.heap_allocations);
+    logger->log(LogLevel::LOG_INFO, "MemoryManager", "Total bytes allocated: %u", stats.total_bytes_allocated);
+    logger->log(LogLevel::LOG_INFO, "MemoryManager", "Current bytes allocated: %u", stats.current_bytes_allocated);
+    logger->log(LogLevel::LOG_INFO, "MemoryManager", "Peak bytes allocated: %u", stats.peak_bytes_allocated);
+    logger->log(LogLevel::LOG_INFO, "MemoryManager", "Emergency cleanups: %u", emergency_cleanups);
+    logger->log(LogLevel::LOG_INFO, "MemoryManager", "Defragmentation runs: %u", stats.defragmentation_runs);
+    logger->log(LogLevel::LOG_INFO, "MemoryManager", "Free memory: %u bytes", getFreeMemory());
+    logger->log(LogLevel::LOG_INFO, "MemoryManager", "Fragmentation ratio: %.1f%%", getFragmentationRatio() * 100);
+    logger->log(LogLevel::LOG_INFO, "MemoryManager", "================================");
 }
 
 size_t MemoryManager::getFreeMemory() const {
@@ -515,8 +516,8 @@ void MemoryManager::dumpAllocations() const {
     auto logger = SystemManager::getInstance().getLogger();
     if (!logger) return;
     
-    logger->log(LOG_INFO, "MemoryManager", "=== Active Memory Allocations ===");
-    logger->log(LOG_INFO, "MemoryManager", "Total active allocations: %u", active_allocations.size());
+    logger->log(LogLevel::LOG_INFO, "MemoryManager", "=== Active Memory Allocations ===");
+    logger->log(LogLevel::LOG_INFO, "MemoryManager", "Total active allocations: %u", active_allocations.size());
     
     for (const auto& pair : active_allocations) {
         void* ptr = pair.first;
@@ -528,10 +529,10 @@ void MemoryManager::dumpAllocations() const {
             source = source_it->second;
         }
         
-        logger->log(LOG_INFO, "MemoryManager", "  %p: %u bytes from %s", ptr, size, source);
+        logger->log(LogLevel::LOG_INFO, "MemoryManager", "  %p: %u bytes from %s", ptr, size, source);
     }
-    
-    logger->log(LOG_INFO, "MemoryManager", "=================================");
+
+    logger->log(LogLevel::LOG_INFO, "MemoryManager", "=================================");
 }
 
 size_t MemoryManager::alignSize(size_t size) {

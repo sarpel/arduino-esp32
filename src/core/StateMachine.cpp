@@ -88,7 +88,7 @@ void StateMachine::configureInitializingState() {
     config.withMaxDuration(10000)  // 10 seconds max
           .withAutoRecovery(true)
           .withEntryCondition(
-              []() { return SystemManager::getInstance().isInitialized(); },
+              std::function<bool()>([]() { return SystemManager::getInstance().isInitialized(); }),
               "SystemManager must be initialized", 5000);
     
     configureState(config);
@@ -99,13 +99,13 @@ void StateMachine::configureConnectingWiFiState() {
     config.withMaxDuration(60000)  // 1 minute max
           .withAutoRecovery(true)
           .withEntryCondition(
-              []() { return SystemManager::getInstance().getNetworkManager() != nullptr; },
+              std::function<bool()>([]() { return SystemManager::getInstance().getNetworkManager() != nullptr; }),
               "NetworkManager must be available")
           .withExitCondition(
-              []() { 
+              std::function<bool()>([]() { 
                   auto net_manager = SystemManager::getInstance().getNetworkManager();
                   return net_manager && net_manager->isWiFiConnected(); 
-              },
+              }),
               "WiFi connection established");
     
     configureState(config);
@@ -116,16 +116,16 @@ void StateMachine::configureConnectingServerState() {
     config.withMaxDuration(120000)  // 2 minutes max
           .withAutoRecovery(true)
           .withEntryCondition(
-              []() { 
+              std::function<bool()>([]() { 
                   auto net_manager = SystemManager::getInstance().getNetworkManager();
                   return net_manager && net_manager->isWiFiConnected(); 
-              },
+              }),
               "WiFi must be connected")
           .withExitCondition(
-              []() { 
+              std::function<bool()>([]() { 
                   auto net_manager = SystemManager::getInstance().getNetworkManager();
                   return net_manager && net_manager->isServerConnected(); 
-              },
+              }),
               "Server connection established");
     
     configureState(config);
@@ -136,16 +136,16 @@ void StateMachine::configureConnectedState() {
     config.withMaxDuration(0)  // No timeout - can stay connected indefinitely
           .withAutoRecovery(true)
           .withEntryCondition(
-              []() { 
+              std::function<bool()>([]() { 
                   auto net_manager = SystemManager::getInstance().getNetworkManager();
                   return net_manager && net_manager->isServerConnected(); 
-              },
+              }),
               "Server must be connected")
           .withExitCondition(
-              []() { 
+              std::function<bool()>([]() { 
                   auto net_manager = SystemManager::getInstance().getNetworkManager();
                   return !net_manager || !net_manager->isServerConnected() || !net_manager->isWiFiConnected(); 
-              },
+              }),
               "Connection lost");
     
     configureState(config);
@@ -156,10 +156,10 @@ void StateMachine::configureDisconnectedState() {
     config.withMaxDuration(30000)  // 30 seconds max
           .withAutoRecovery(true)
           .withEntryCondition(
-              []() { return true; },  // Can always enter disconnected state
+              std::function<bool()>([]() { return true; }),  // Can always enter disconnected state
               "Always allowed")
           .withExitCondition(
-              []() { return true; },  // Can always exit to retry connection
+              std::function<bool()>([]() { return true; }),  // Can always exit to retry connection
               "Ready to reconnect");
     
     configureState(config);
@@ -170,13 +170,13 @@ void StateMachine::configureErrorState() {
     config.withMaxDuration(60000)  // 1 minute max in error state
           .withAutoRecovery(true)
           .withEntryCondition(
-              []() { return true; },  // Can always enter error state
+              std::function<bool()>([]() { return true; }),  // Can always enter error state
               "Error condition detected")
           .withExitCondition(
-              []() { 
+              std::function<bool()>([]() { 
                   auto health_monitor = SystemManager::getInstance().getHealthMonitor();
                   return health_monitor && health_monitor->canAutoRecover(); 
-              },
+              }),
               "Recovery conditions met", 30000);
     
     configureState(config);
@@ -188,7 +188,7 @@ void StateMachine::configureMaintenanceState() {
           .withAutoRecovery(false)  // No auto-recovery from maintenance
           .withManualTransition(true)
           .withEntryCondition(
-              []() { return true; },  // Can always enter maintenance
+              std::function<bool()>([]() { return true; }),  // Can always enter maintenance
               "Maintenance mode requested");
     
     configureState(config);

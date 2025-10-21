@@ -360,13 +360,13 @@ bool AudioProcessor::initialize() {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "AudioProcessor", "Initializing AudioProcessor");
+        logger->log(LogLevel::LOG_INFO, "AudioProcessor", __FILE__, __LINE__, "Initializing AudioProcessor");
     }
     
     // Initialize I2S
     if (!initializeI2S()) {
         if (logger) {
-            logger->log(LOG_ERROR, "AudioProcessor", "I2S initialization failed");
+            logger->log(LogLevel::LOG_ERROR, "AudioProcessor", __FILE__, __LINE__, "I2S initialization failed");
         }
         return false;
     }
@@ -376,39 +376,39 @@ bool AudioProcessor::initialize() {
     processing_buffer = new float[processing_buffer_size];
     if (!processing_buffer) {
         if (logger) {
-            logger->log(LOG_ERROR, "AudioProcessor", "Failed to allocate processing buffer");
+            logger->log(LogLevel::LOG_ERROR, "AudioProcessor", __FILE__, __LINE__, "Failed to allocate processing buffer");
         }
         return false;
     }
     
     // Initialize processing components
     if (config.enable_noise_reduction) {
-        noise_reducer = std::make_unique<NoiseReducer>();
+        noise_reducer = std::unique_ptr<NoiseReducer>(new NoiseReducer());
         noise_reducer->initialize(config.noise_reduction_level);
     }
-    
+
     if (config.enable_agc) {
-        agc = std::make_unique<AutomaticGainControl>();
+        agc = std::unique_ptr<AutomaticGainControl>(new AutomaticGainControl());
         agc->initialize(config.agc_target_level, config.agc_max_gain);
     }
-    
+
     if (config.enable_vad) {
-        vad = std::make_unique<VoiceActivityDetector>();
+        vad = std::unique_ptr<VoiceActivityDetector>(new VoiceActivityDetector());
         vad->initialize();
     }
-    
+
     // Initialize audio buffers
-    input_buffer = std::make_unique<AudioBuffer>(processing_buffer_size * 4);
-    output_buffer = std::make_unique<AudioBuffer>(processing_buffer_size * 4);
+    input_buffer = std::unique_ptr<AudioBuffer>(new AudioBuffer(processing_buffer_size * 4));
+    output_buffer = std::unique_ptr<AudioBuffer>(new AudioBuffer(processing_buffer_size * 4));
     
     initialized = true;
     processing_enabled = true;
     
     if (logger) {
-        logger->log(LOG_INFO, "AudioProcessor", "AudioProcessor initialized successfully");
-        logger->log(LOG_INFO, "AudioProcessor", "Sample rate: %u Hz, Bit depth: %u, Channels: %u",
+        logger->log(LogLevel::LOG_INFO, "AudioProcessor", __FILE__, __LINE__, "AudioProcessor initialized successfully");
+        logger->log(LogLevel::LOG_INFO, "AudioProcessor", __FILE__, __LINE__, "Sample rate: %u Hz, Bit depth: %u, Channels: %u",
                    config.sample_rate, config.bit_depth, config.channels);
-        logger->log(LOG_INFO, "AudioProcessor", "Processing features: NR=%s, AGC=%s, VAD=%s",
+        logger->log(LogLevel::LOG_INFO, "AudioProcessor", __FILE__, __LINE__, "Processing features: NR=%s, AGC=%s, VAD=%s",
                    config.enable_noise_reduction ? "yes" : "no",
                    config.enable_agc ? "yes" : "no",
                    config.enable_vad ? "yes" : "no");
@@ -430,7 +430,7 @@ void AudioProcessor::shutdown() {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "AudioProcessor", "Shutting down AudioProcessor");
+        logger->log(LogLevel::LOG_INFO, "AudioProcessor", __FILE__, __LINE__, "Shutting down AudioProcessor");
         printStatistics();
     }
     
@@ -462,21 +462,21 @@ void AudioProcessor::setConfig(const AudioConfig& new_config) {
     // Reinitialize components if needed
     if (initialized) {
         if (config.enable_noise_reduction && !noise_reducer) {
-            noise_reducer = std::make_unique<NoiseReducer>();
+            noise_reducer = std::unique_ptr<NoiseReducer>(new NoiseReducer());
             noise_reducer->initialize(config.noise_reduction_level);
         } else if (!config.enable_noise_reduction && noise_reducer) {
             noise_reducer.reset();
         }
-        
+
         if (config.enable_agc && !agc) {
-            agc = std::make_unique<AutomaticGainControl>();
+            agc = std::unique_ptr<AutomaticGainControl>(new AutomaticGainControl());
             agc->initialize(config.agc_target_level, config.agc_max_gain);
         } else if (!config.enable_agc && agc) {
             agc.reset();
         }
-        
+
         if (config.enable_vad && !vad) {
-            vad = std::make_unique<VoiceActivityDetector>();
+            vad = std::unique_ptr<VoiceActivityDetector>(new VoiceActivityDetector());
             vad->initialize();
         } else if (!config.enable_vad && vad) {
             vad.reset();
@@ -667,7 +667,7 @@ void AudioProcessor::convertFromFloat(const float* input, uint8_t* output, size_
 bool AudioProcessor::reinitialize() {
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "AudioProcessor", "Reinitializing audio system");
+        logger->log(LogLevel::LOG_INFO, "AudioProcessor", __FILE__, __LINE__, "Reinitializing audio system");
     }
     
     shutdown();
@@ -701,21 +701,21 @@ void AudioProcessor::printStatistics() const {
     auto logger = SystemManager::getInstance().getLogger();
     if (!logger) return;
     
-    logger->log(LOG_INFO, "AudioProcessor", "=== Audio Processor Statistics ===");
-    logger->log(LOG_INFO, "AudioProcessor", "Samples processed: %u", stats.samples_processed);
-    logger->log(LOG_INFO, "AudioProcessor", "Noise reduction applied: %u times", stats.noise_reduction_applied);
-    logger->log(LOG_INFO, "AudioProcessor", "AGC adjustments: %u", stats.agc_adjustments);
-    logger->log(LOG_INFO, "AudioProcessor", "Voice activity detected: %u times", stats.voice_activity_detected);
-    logger->log(LOG_INFO, "AudioProcessor", "Silent frames: %u", stats.silent_frames);
-    logger->log(LOG_INFO, "AudioProcessor", "Clipping events: %u", stats.clipping_events);
-    logger->log(LOG_INFO, "AudioProcessor", "Processing errors: %u", stats.processing_errors);
-    logger->log(LOG_INFO, "AudioProcessor", "I2S errors: %u", i2s_errors);
-    logger->log(LOG_INFO, "AudioProcessor", "Input level: %.2f dB", 20.0f * log10f(stats.average_input_level + 0.001f));
-    logger->log(LOG_INFO, "AudioProcessor", "Output level: %.2f dB", 20.0f * log10f(stats.average_output_level + 0.001f));
-    logger->log(LOG_INFO, "AudioProcessor", "Current gain: %.2f", stats.current_gain);
-    logger->log(LOG_INFO, "AudioProcessor", "Buffer underruns: %u", stats.buffer_underruns);
-    logger->log(LOG_INFO, "AudioProcessor", "Buffer overruns: %u", stats.buffer_overruns);
-    logger->log(LOG_INFO, "AudioProcessor", "==================================");
+    logger->log(LogLevel::LOG_INFO, "AudioProcessor", __FILE__, __LINE__, "=== Audio Processor Statistics ===");
+    logger->log(LogLevel::LOG_INFO, "AudioProcessor", __FILE__, __LINE__, "Samples processed: %u", stats.samples_processed);
+    logger->log(LogLevel::LOG_INFO, "AudioProcessor", __FILE__, __LINE__, "Noise reduction applied: %u times", stats.noise_reduction_applied);
+    logger->log(LogLevel::LOG_INFO, "AudioProcessor", __FILE__, __LINE__, "AGC adjustments: %u", stats.agc_adjustments);
+    logger->log(LogLevel::LOG_INFO, "AudioProcessor", __FILE__, __LINE__, "Voice activity detected: %u times", stats.voice_activity_detected);
+    logger->log(LogLevel::LOG_INFO, "AudioProcessor", __FILE__, __LINE__, "Silent frames: %u", stats.silent_frames);
+    logger->log(LogLevel::LOG_INFO, "AudioProcessor", __FILE__, __LINE__, "Clipping events: %u", stats.clipping_events);
+    logger->log(LogLevel::LOG_INFO, "AudioProcessor", __FILE__, __LINE__, "Processing errors: %u", stats.processing_errors);
+    logger->log(LogLevel::LOG_INFO, "AudioProcessor", __FILE__, __LINE__, "I2S errors: %u", i2s_errors);
+    logger->log(LogLevel::LOG_INFO, "AudioProcessor", __FILE__, __LINE__, "Input level: %.2f dB", 20.0f * log10f(stats.average_input_level + 0.001f));
+    logger->log(LogLevel::LOG_INFO, "AudioProcessor", __FILE__, __LINE__, "Output level: %.2f dB", 20.0f * log10f(stats.average_output_level + 0.001f));
+    logger->log(LogLevel::LOG_INFO, "AudioProcessor", __FILE__, __LINE__, "Current gain: %.2f", stats.current_gain);
+    logger->log(LogLevel::LOG_INFO, "AudioProcessor", __FILE__, __LINE__, "Buffer underruns: %u", stats.buffer_underruns);
+    logger->log(LogLevel::LOG_INFO, "AudioProcessor", __FILE__, __LINE__, "Buffer overruns: %u", stats.buffer_overruns);
+    logger->log(LogLevel::LOG_INFO, "AudioProcessor", __FILE__, __LINE__, "==================================");
 }
 
 float AudioProcessor::getAudioQualityScore() const {

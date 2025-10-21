@@ -4,6 +4,7 @@
 #include <memory>
 #include "../network/NetworkManager.h"
 #include "../utils/MemoryManager.h"
+#include "../audio/AudioProcessor.h"
 
 HealthMonitor::HealthMonitor() 
     : initialized(false), enable_predictions(true), auto_recovery_enabled(true),

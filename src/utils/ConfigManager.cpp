@@ -2,6 +2,8 @@
 #include "../core/SystemManager.h"
 #include "EnhancedLogger.h"
 #include <memory>
+#include "../audio/AudioProcessor.h"
+#include "../network/NetworkManager.h"
 
 ConfigManager::ConfigManager()
     : active_profile(nullptr), use_file_config(false), use_network_config(false),
@@ -24,7 +26,7 @@ bool ConfigManager::initialize() {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "ConfigManager", "Initializing ConfigManager");
+        logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "Initializing ConfigManager");
     }
     
     // Load default configuration
@@ -50,7 +52,7 @@ bool ConfigManager::initialize() {
     initialized = true;
     
     if (logger) {
-        logger->log(LOG_INFO, "ConfigManager", "ConfigManager initialized with %u configuration items",
+        logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "ConfigManager initialized with %u configuration items",
                    current_config.size());
     }
     
@@ -64,7 +66,7 @@ void ConfigManager::shutdown() {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "ConfigManager", "Shutting down ConfigManager");
+        logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "Shutting down ConfigManager");
         printStatistics();
     }
     
@@ -172,7 +174,7 @@ bool ConfigManager::loadConfiguration() {
         if (!validateConfiguration()) {
             auto logger = SystemManager::getInstance().getLogger();
             if (logger) {
-                logger->log(LOG_ERROR, "ConfigManager", "Configuration validation failed");
+                logger->log(LogLevel::LOG_ERROR, "ConfigManager", __FILE__, __LINE__, "Configuration validation failed");
             }
             return false;
         }
@@ -191,7 +193,7 @@ void ConfigManager::loadConfigurationFromFile() {
     // For now, this is a placeholder
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "ConfigManager", "Loading configuration from file: %s",
+        logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "Loading configuration from file: %s",
                    config_file_path.c_str());
     }
 }
@@ -201,7 +203,7 @@ void ConfigManager::loadConfigurationFromNetwork() {
     // For now, this is a placeholder
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "ConfigManager", "Loading configuration from network: %s",
+        logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "Loading configuration from network: %s",
                    network_config_url.c_str());
     }
 }
@@ -211,7 +213,7 @@ void ConfigManager::loadConfigurationFromBLE() {
     // For now, this is a placeholder
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "ConfigManager", "Loading configuration from BLE");
+        logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "Loading configuration from BLE");
     }
 }
 
@@ -220,7 +222,7 @@ void ConfigManager::saveConfigurationToFile() {
     // For now, this is a placeholder
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "ConfigManager", "Saving configuration to file: %s",
+        logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "Saving configuration to file: %s",
                    config_file_path.c_str());
     }
 }
@@ -233,10 +235,10 @@ bool ConfigManager::validateConfiguration() {
         
         auto logger = SystemManager::getInstance().getLogger();
         if (logger) {
-            logger->log(LOG_ERROR, "ConfigManager", "Configuration validation failed with %u errors:",
+            logger->log(LogLevel::LOG_ERROR, "ConfigManager", __FILE__, __LINE__, "Configuration validation failed with %u errors:",
                        errors.size());
             for (const auto& error : errors) {
-                logger->log(LOG_ERROR, "ConfigManager", "  %s", error.c_str());
+                logger->log(LogLevel::LOG_ERROR, "ConfigManager", __FILE__, __LINE__, "  %s", error.c_str());
             }
         }
         
@@ -293,7 +295,7 @@ void ConfigManager::applyConfiguration() {
     // Apply configuration to system components
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "ConfigManager", "Applying configuration");
+        logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "Applying configuration");
     }
     
     // Apply audio configuration
@@ -484,7 +486,7 @@ bool ConfigManager::startConfigurationPortal() {
     // For now, this is a placeholder
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "ConfigManager", "Starting configuration portal");
+        logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "Starting configuration portal");
     }
     return true;
 }
@@ -493,7 +495,7 @@ void ConfigManager::stopConfigurationPortal() {
     // Configuration portal implementation would go here
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "ConfigManager", "Stopping configuration portal");
+        logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "Stopping configuration portal");
     }
 }
 
@@ -506,8 +508,8 @@ void ConfigManager::printConfiguration() const {
     auto logger = SystemManager::getInstance().getLogger();
     if (!logger) return;
     
-    logger->log(LOG_INFO, "ConfigManager", "=== Current Configuration ===");
-    logger->log(LOG_INFO, "ConfigManager", "Total items: %u", current_config.size());
+    logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "=== Current Configuration ===");
+    logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "Total items: %u", current_config.size());
     
     for (const auto& pair : current_config) {
         const String& key = pair.first;
@@ -531,43 +533,43 @@ void ConfigManager::printConfiguration() const {
                 value_str = "unknown";
         }
         
-        logger->log(LOG_INFO, "ConfigManager", "%s: %s", key.c_str(), value_str.c_str());
+        logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "%s: %s", key.c_str(), value_str.c_str());
     }
     
-    logger->log(LOG_INFO, "ConfigManager", "============================");
+    logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "============================");
 }
 
 void ConfigManager::printProfiles() const {
     auto logger = SystemManager::getInstance().getLogger();
     if (!logger) return;
     
-    logger->log(LOG_INFO, "ConfigManager", "=== Configuration Profiles ===");
+    logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "=== Configuration Profiles ===");
     
     for (const auto& profile : profiles) {
-        logger->log(LOG_INFO, "ConfigManager", "%s: %s (%u items)",
+        logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "%s: %s (%u items)",
                    profile.name.c_str(), profile.description.c_str(), profile.values.size());
         
         if (active_profile == &profile) {
-            logger->log(LOG_INFO, "ConfigManager", "  [ACTIVE]");
+            logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "  [ACTIVE]");
         }
     }
     
-    logger->log(LOG_INFO, "ConfigManager", "=============================");
+    logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "=============================");
 }
 
 void ConfigManager::printStatistics() const {
     auto logger = SystemManager::getInstance().getLogger();
     if (!logger) return;
     
-    logger->log(LOG_INFO, "ConfigManager", "=== Configuration Statistics ===");
-    logger->log(LOG_INFO, "ConfigManager", "Configuration updates: %u", config_updates);
-    logger->log(LOG_INFO, "ConfigManager", "Validation errors: %u", validation_errors);
-    logger->log(LOG_INFO, "ConfigManager", "Profile switches: %u", profile_switches);
-    logger->log(LOG_INFO, "ConfigManager", "Current items: %u", current_config.size());
-    logger->log(LOG_INFO, "ConfigManager", "Profiles: %u", profiles.size());
-    logger->log(LOG_INFO, "ConfigManager", "Validation rules: %u", validation_rules.size());
-    logger->log(LOG_INFO, "ConfigManager", "Last update: %lu ms ago", millis() - last_config_update);
-    logger->log(LOG_INFO, "ConfigManager", "================================");
+    logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "=== Configuration Statistics ===");
+    logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "Configuration updates: %u", config_updates);
+    logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "Validation errors: %u", validation_errors);
+    logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "Profile switches: %u", profile_switches);
+    logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "Current items: %u", current_config.size());
+    logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "Profiles: %u", profiles.size());
+    logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "Validation rules: %u", validation_rules.size());
+    logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "Last update: %lu ms ago", millis() - last_config_update);
+    logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "================================");
 }
 
 std::vector<String> ConfigManager::getAllKeys() const {
@@ -621,7 +623,7 @@ bool ConfigManager::importConfiguration(const String& input) {
     // This is a simplified implementation
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "ConfigManager", "Importing configuration");
+        logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "Importing configuration");
     }
     
     // For now, just mark as updated
@@ -635,7 +637,7 @@ bool ConfigManager::backupConfiguration(const String& backup_name) {
     // Configuration backup implementation would go here
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "ConfigManager", "Creating configuration backup: %s",
+        logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "Creating configuration backup: %s",
                    backup_name.c_str());
     }
     return true;
@@ -645,7 +647,7 @@ bool ConfigManager::restoreConfiguration(const String& backup_name) {
     // Configuration restore implementation would go here
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "ConfigManager", "Restoring configuration from backup: %s",
+        logger->log(LogLevel::LOG_INFO, "ConfigManager", __FILE__, __LINE__, "Restoring configuration from backup: %s",
                    backup_name.c_str());
     }
     return true;
