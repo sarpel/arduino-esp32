@@ -14,11 +14,16 @@
 - Main implementation after setup/loop
 - Comments with `=====` separators for major sections
 
-## Docstring/Comments Style
-- Section headers: `// ===== Section Name =====`
-- Inline comments: `// Brief explanation`
-- Function explanations inline above definition or in brief
-- No docstring blocks, prefer inline documentation
+## Docstrings / Comments
+**Doxygen-style docstrings for all public APIs:**
+- Use `/** ... */` blocks with @brief, @param, @return, @note tags
+- Document all public classes, methods, enums, and significant members
+- Include usage examples for complex interfaces
+- Explain thread-safety, lifecycle requirements, and side effects
+**Inline documentation:**
+- Use `///` for member variable documentation
+- Use `//` for implementation notes within method bodies
+- Section headers remain with `// ========== SECTION ==========`
 
 ## Type Hints
 - Arduino types: `uint8_t`, `uint32_t`, `uint64_t`, `unsigned long`
