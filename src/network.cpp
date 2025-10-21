@@ -34,8 +34,17 @@ uint32_t NetworkManager::server_reconnect_count = 0;
 uint32_t NetworkManager::tcp_error_count = 0;
 int NetworkManager::wifi_retry_count = 0;
 
+// TCP Connection State Machine members
+TCPConnectionState NetworkManager::tcp_state = TCPConnectionState::DISCONNECTED;
+unsigned long NetworkManager::tcp_state_change_time = 0;
+unsigned long NetworkManager::tcp_connection_established_time = 0;
+uint32_t NetworkManager::tcp_state_changes = 0;
+
 void NetworkManager::initialize() {
     LOG_INFO("Initializing network...");
+
+    // Initialize adaptive buffer management
+    AdaptiveBuffer::initialize(I2S_BUFFER_SIZE);
 
     // Configure WiFi for reliability
     WiFi.mode(WIFI_STA);
@@ -110,6 +119,9 @@ void NetworkManager::monitorWiFiQuality() {
 
     int32_t rssi = WiFi.RSSI();
 
+    // Update adaptive buffer based on signal strength
+    AdaptiveBuffer::updateBufferSize(rssi);
+
     if (rssi < RSSI_WEAK_THRESHOLD) {
         LOG_WARN("Weak WiFi signal: %d dBm - triggering preemptive reconnection", rssi);
         WiFi.disconnect();
@@ -129,6 +141,9 @@ bool NetworkManager::connectToServer() {
         return false;
     }
 
+    // Update state to CONNECTING
+    updateTCPState(TCPConnectionState::CONNECTING);
+
     LOG_INFO("Attempting to connect to server %s:%d (attempt %d)...",
              SERVER_HOST, SERVER_PORT, server_backoff.getFailureCount() + 1);
 
@@ -141,6 +156,9 @@ bool NetworkManager::connectToServer() {
         last_successful_write = millis();
         server_backoff.reset();
         server_reconnect_count++;
+
+        // Update state to CONNECTED
+        updateTCPState(TCPConnectionState::CONNECTED);
 
         // Configure TCP keepalive for dead connection detection
         int sockfd = client.fd();
@@ -163,6 +181,9 @@ bool NetworkManager::connectToServer() {
         LOG_ERROR("Server connection failed");
         server_connected = false;
 
+        // Update state to ERROR
+        handleTCPError("connectToServer");
+
         // Set next retry time with exponential backoff
         unsigned long next_delay = server_backoff.getNextDelay();
         server_retry_timer.setInterval(next_delay);
@@ -175,9 +196,15 @@ bool NetworkManager::connectToServer() {
 
 void NetworkManager::disconnectFromServer() {
     if (server_connected || client.connected()) {
+        // Update state to CLOSING
+        updateTCPState(TCPConnectionState::CLOSING);
+
         LOG_INFO("Disconnecting from server");
         client.stop();
         server_connected = false;
+
+        // Update state to DISCONNECTED
+        updateTCPState(TCPConnectionState::DISCONNECTED);
     }
 }
 
@@ -207,8 +234,10 @@ bool NetworkManager::writeData(const uint8_t* data, size_t length) {
         last_successful_write = millis();
         return true;
     } else {
-        tcp_error_count++;
         LOG_ERROR("TCP write incomplete: sent %u of %u bytes", bytes_sent, length);
+
+        // Handle write error
+        handleTCPError("writeData");
 
         // Check for write timeout
         if (millis() - last_successful_write > TCP_WRITE_TIMEOUT) {
@@ -230,4 +259,112 @@ uint32_t NetworkManager::getServerReconnectCount() {
 
 uint32_t NetworkManager::getTCPErrorCount() {
     return tcp_error_count;
+}
+
+// ===== TCP Connection State Machine Implementation =====
+
+void NetworkManager::updateTCPState(TCPConnectionState new_state) {
+    if (tcp_state != new_state) {
+        TCPConnectionState old_state = tcp_state;
+        tcp_state = new_state;
+        tcp_state_change_time = millis();
+        tcp_state_changes++;
+
+        // Log state transitions
+        const char* old_name = "UNKNOWN";
+        const char* new_name = "UNKNOWN";
+
+        switch (old_state) {
+            case TCPConnectionState::DISCONNECTED: old_name = "DISCONNECTED"; break;
+            case TCPConnectionState::CONNECTING: old_name = "CONNECTING"; break;
+            case TCPConnectionState::CONNECTED: old_name = "CONNECTED"; break;
+            case TCPConnectionState::ERROR: old_name = "ERROR"; break;
+            case TCPConnectionState::CLOSING: old_name = "CLOSING"; break;
+        }
+
+        switch (new_state) {
+            case TCPConnectionState::DISCONNECTED: new_name = "DISCONNECTED"; break;
+            case TCPConnectionState::CONNECTING: new_name = "CONNECTING"; break;
+            case TCPConnectionState::CONNECTED: new_name = "CONNECTED"; break;
+            case TCPConnectionState::ERROR: new_name = "ERROR"; break;
+            case TCPConnectionState::CLOSING: new_name = "CLOSING"; break;
+        }
+
+        LOG_INFO("TCP state transition: %s → %s", old_name, new_name);
+
+        // Update connection established time when entering CONNECTED state
+        if (new_state == TCPConnectionState::CONNECTED) {
+            tcp_connection_established_time = millis();
+        }
+    }
+}
+
+void NetworkManager::handleTCPError(const char* error_source) {
+    tcp_error_count++;
+    LOG_ERROR("TCP error from %s", error_source);
+    updateTCPState(TCPConnectionState::ERROR);
+}
+
+bool NetworkManager::validateConnection() {
+    // Validate that connection state matches actual TCP connection
+    bool is_actually_connected = client.connected();
+    bool state_says_connected = (tcp_state == TCPConnectionState::CONNECTED);
+
+    if (state_says_connected && !is_actually_connected) {
+        LOG_WARN("TCP state mismatch: state=CONNECTED but client.connected()=false");
+        updateTCPState(TCPConnectionState::DISCONNECTED);
+        return false;
+    }
+
+    if (!state_says_connected && is_actually_connected) {
+        LOG_WARN("TCP state mismatch: state!= CONNECTED but client.connected()=true");
+        updateTCPState(TCPConnectionState::CONNECTED);
+        return true;
+    }
+
+    return is_actually_connected;
+}
+
+TCPConnectionState NetworkManager::getTCPState() {
+    validateConnection();  // Synchronize state with actual connection
+    return tcp_state;
+}
+
+bool NetworkManager::isTCPConnecting() {
+    return tcp_state == TCPConnectionState::CONNECTING;
+}
+
+bool NetworkManager::isTCPConnected() {
+    validateConnection();  // Synchronize before returning
+    return tcp_state == TCPConnectionState::CONNECTED;
+}
+
+bool NetworkManager::isTCPError() {
+    return tcp_state == TCPConnectionState::ERROR;
+}
+
+unsigned long NetworkManager::getTimeSinceLastWrite() {
+    return millis() - last_successful_write;
+}
+
+unsigned long NetworkManager::getConnectionUptime() {
+    if (tcp_state != TCPConnectionState::CONNECTED) {
+        return 0;
+    }
+    return millis() - tcp_connection_established_time;
+}
+
+uint32_t NetworkManager::getTCPStateChangeCount() {
+    return tcp_state_changes;
+}
+
+// ===== Adaptive Buffer Management =====
+
+void NetworkManager::updateAdaptiveBuffer() {
+    if (!isWiFiConnected()) return;
+    AdaptiveBuffer::updateBufferSize(WiFi.RSSI());
+}
+
+size_t NetworkManager::getAdaptiveBufferSize() {
+    return AdaptiveBuffer::getBufferSize();
 }

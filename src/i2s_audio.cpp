@@ -3,6 +3,9 @@
 
 bool I2SAudio::is_initialized = false;
 int I2SAudio::consecutive_errors = 0;
+uint32_t I2SAudio::total_errors = 0;
+uint32_t I2SAudio::transient_errors = 0;
+uint32_t I2SAudio::permanent_errors = 0;
 
 bool I2SAudio::initialize() {
     LOG_INFO("Initializing I2S audio driver...");
@@ -73,13 +76,28 @@ bool I2SAudio::readData(uint8_t* buffer, size_t buffer_size, size_t* bytes_read)
     esp_err_t result = i2s_read(I2S_PORT, buffer, buffer_size, bytes_read, pdMS_TO_TICKS(1000));
 
     if (result != ESP_OK) {
-        LOG_ERROR("I2S read failed: %d", result);
+        // Classify error type for better recovery strategy
+        I2SErrorType error_type = classifyError(result);
+        total_errors++;
+
+        if (error_type == I2SErrorType::TRANSIENT) {
+            transient_errors++;
+            LOG_WARN("I2S read transient error (%d) - retry may succeed", result);
+        } else if (error_type == I2SErrorType::PERMANENT) {
+            permanent_errors++;
+            LOG_ERROR("I2S read permanent error (%d) - reinitialization recommended", result);
+        } else {
+            LOG_ERROR("I2S read fatal error (%d) - recovery unlikely", result);
+        }
+
         consecutive_errors++;
         return false;
     }
 
     if (*bytes_read == 0) {
         LOG_WARN("I2S read returned 0 bytes");
+        total_errors++;
+        transient_errors++;  // Zero bytes is typically transient (no data ready)
         consecutive_errors++;
         return false;
     }
@@ -127,4 +145,80 @@ bool I2SAudio::reinitialize() {
         consecutive_errors = 0;
     }
     return result;
+}
+
+// ===== Error Classification & Health Checks =====
+
+I2SErrorType I2SAudio::classifyError(esp_err_t error) {
+    switch (error) {
+        case ESP_OK:
+            return I2SErrorType::NONE;
+
+        // Transient errors (temporary, likely recoverable with retry)
+        case ESP_ERR_NO_MEM:
+            // Memory pressure - may recover
+            return I2SErrorType::TRANSIENT;
+
+        case ESP_ERR_INVALID_STATE:
+            // Driver in wrong state - may recover with delay
+            return I2SErrorType::TRANSIENT;
+
+        case ESP_ERR_TIMEOUT:
+            // Timeout waiting for data - likely temporary
+            return I2SErrorType::TRANSIENT;
+
+        // Permanent errors (reinitialization needed)
+        case ESP_ERR_INVALID_ARG:
+            // Invalid parameter - configuration issue
+            return I2SErrorType::PERMANENT;
+
+        case ESP_ERR_NOT_FOUND:
+            // I2S port not found - hardware issue
+            return I2SErrorType::PERMANENT;
+
+        case ESP_FAIL:
+            // Generic failure - try reinitialization
+            return I2SErrorType::PERMANENT;
+
+        // Fatal errors (cannot recover)
+        default:
+            return I2SErrorType::FATAL;
+    }
+}
+
+bool I2SAudio::healthCheck() {
+    if (!is_initialized) {
+        LOG_WARN("I2S health check: not initialized");
+        return false;
+    }
+
+    // Check if too many consecutive errors indicate health issue
+    if (consecutive_errors > (MAX_CONSECUTIVE_FAILURES / 2)) {
+        LOG_WARN("I2S health check: %d consecutive errors detected", consecutive_errors);
+        return false;
+    }
+
+    // Verify error rates are acceptable
+    // If permanent errors > 20% of total, something is wrong
+    if (total_errors > 100 && (permanent_errors * 100 / total_errors) > 20) {
+        LOG_ERROR("I2S health check: high permanent error rate (%u%% of %u total)",
+                 permanent_errors * 100 / total_errors, total_errors);
+        return false;
+    }
+
+    LOG_DEBUG("I2S health check: OK (total:%u, transient:%u, permanent:%u)",
+             total_errors, transient_errors, permanent_errors);
+    return true;
+}
+
+uint32_t I2SAudio::getErrorCount() {
+    return total_errors;
+}
+
+uint32_t I2SAudio::getTransientErrorCount() {
+    return transient_errors;
+}
+
+uint32_t I2SAudio::getPermanentErrorCount() {
+    return permanent_errors;
 }
