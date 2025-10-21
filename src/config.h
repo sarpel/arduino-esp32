@@ -104,4 +104,29 @@
 // Set to 0 for production (minimal logging), 3+ for development
 #define DEBUG_LEVEL 3
 
+// ===== Phase 1: Network Resilience Configuration =====
+// Enable/disable reliability features
+#define ENABLE_MULTI_WIFI true                 // Multi-WiFi with automatic failover
+#define ENABLE_NETWORK_QUALITY_MONITORING true // WiFi quality tracking
+#define ENABLE_CONNECTION_POOL true            // Connection pool management
+#define ENABLE_ADAPTIVE_RECONNECTION true      // Adaptive reconnection strategies
+
+// Network Resilience Parameters
+#define MULTI_WIFI_MAX_NETWORKS 5              // Maximum number of WiFi networks
+#define NETWORK_QUALITY_CHECK_INTERVAL 10000   // Quality check every 10 seconds
+#define NETWORK_SWITCH_COOLDOWN 30000          // Min interval between network switches (30s)
+#define CONNECTION_POOL_SIZE 3                 // Max connections in pool
+#define CONNECTION_HEALTH_CHECK_INTERVAL 10000 // Connection health check interval (10s)
+
+// Reconnection Strategy
+#define RECONNECT_BASE_DELAY_MS 1000           // Base exponential backoff
+#define RECONNECT_MAX_DELAY_MS 60000           // Maximum backoff (60s)
+#define RECONNECT_JITTER_PERCENT 20            // Random jitter ±20%
+
+// Network Quality Thresholds
+#define QUALITY_SCORE_THRESHOLD_DEGRADE 50     // Score to trigger degradation
+#define QUALITY_SCORE_THRESHOLD_SWITCH 40      // Score to trigger network switch
+#define RSSI_CRITICAL_THRESHOLD -85            // Critical signal strength
+#define PACKET_LOSS_THRESHOLD 10.0f            // Max packet loss before action (%)
+
 #endif // CONFIG_H
