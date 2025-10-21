@@ -67,7 +67,7 @@ struct MemoryConfig {
     uint32_t defragmentation_threshold;
     uint32_t critical_memory_threshold;
     
-    MemoryConfig() : audio_buffer_pool_size(10), network_buffer_pool_size(5),
+    MemoryConfig() : audio_buffer_pool_size(4), network_buffer_pool_size(2),
                     max_heap_allocation(65536), enable_defragmentation(true),
                     enable_statistics(true), defragmentation_threshold(4096),
                     critical_memory_threshold(16384) {}

@@ -108,6 +108,9 @@ void loop()
 
     // Handle serial commands (non-blocking)
     handleSerialCommands();
+    
+    // Yield to WiFi stack and prevent CPU starvation
+    vTaskDelay(pdMS_TO_TICKS(10));
 }
 
 void printSystemBanner()

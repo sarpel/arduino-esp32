@@ -102,7 +102,7 @@ bool MemoryManager::initialize(const MemoryConfig& cfg) {
     // Initialize memory pools
     audio_buffer_pool = std::unique_ptr<MemoryPool>(new MemoryPool(audio_buffer_size, config.audio_buffer_pool_size));
     network_buffer_pool = std::unique_ptr<MemoryPool>(new MemoryPool(network_buffer_size, config.network_buffer_pool_size));
-    general_buffer_pool = std::unique_ptr<MemoryPool>(new MemoryPool(general_buffer_size, 10));  // 10 general buffers
+    general_buffer_pool = std::unique_ptr<MemoryPool>(new MemoryPool(general_buffer_size, 4));  // 4 general buffers
     
     // Reset statistics
     resetStatistics();
@@ -116,7 +116,7 @@ bool MemoryManager::initialize(const MemoryConfig& cfg) {
                    config.audio_buffer_pool_size, audio_buffer_size);
         logger->log(LogLevel::LOG_INFO, "MemoryManager", __FILE__, __LINE__, "  Network pool: %u blocks of %u bytes",
                    config.network_buffer_pool_size, network_buffer_size);
-        logger->log(LogLevel::LOG_INFO, "MemoryManager", __FILE__, __LINE__, "  General pool: 10 blocks of %u bytes", general_buffer_size);
+        logger->log(LogLevel::LOG_INFO, "MemoryManager", __FILE__, __LINE__, "  General pool: 4 blocks of %u bytes", general_buffer_size);
     }
     
     return true;

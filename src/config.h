@@ -2,8 +2,8 @@
 #define CONFIG_H
 
 // ===== WiFi Configuration =====
-#define WIFI_SSID "SSID NAME"
-#define WIFI_PASSWORD "WIFI PASSWORD"
+#define WIFI_SSID "Sarpel_2G"
+#define WIFI_PASSWORD "penguen1988"
 #define WIFI_RETRY_DELAY 500 // milliseconds
 #define WIFI_MAX_RETRIES 20
 #define WIFI_TIMEOUT 30000 // milliseconds
@@ -11,13 +11,13 @@
 // ===== WiFi Static IP (Optional) =====
 // Uncomment to use static IP instead of DHCP
 // #define USE_STATIC_IP
-#define STATIC_IP 0, 0, 0, 0
-#define GATEWAY_IP 0, 0, 0, 0
-#define SUBNET_MASK 0, 0, 0, 0
-#define DNS_IP 0, 0, 0, 0
+#define STATIC_IP 192, 168, 1, 27
+#define GATEWAY_IP 192, 168, 1, 1
+#define SUBNET_MASK 255, 255, 255, 0
+#define DNS_IP 1, 1, 1, 1
 
 // ===== Server Configuration =====
-#define SERVER_HOST "192.168.x.x"
+#define SERVER_HOST "192.168.1.50"
 #define SERVER_PORT 9000
 #define SERVER_RECONNECT_MIN 5000    // milliseconds
 #define SERVER_RECONNECT_MAX 60000   // milliseconds
@@ -101,10 +101,10 @@
 
 // ===== State Timeout Thresholds =====
 // These timeouts detect when a state is stuck and trigger recovery
-#define WIFI_CONNECT_TIMEOUT_MS 30000      // 30 seconds - WiFi connection timeout
-#define SERVER_CONNECT_TIMEOUT_MS 10000    // 10 seconds - Server connection timeout
-#define INITIALIZING_TIMEOUT_MS 10000      // 10 seconds - System initialization timeout
-#define ERROR_RECOVERY_TIMEOUT_MS 60000    // 60 seconds - Max time in ERROR state before force reset
+#define WIFI_CONNECT_TIMEOUT_MS 30000   // 30 seconds - WiFi connection timeout
+#define SERVER_CONNECT_TIMEOUT_MS 10000 // 10 seconds - Server connection timeout
+#define INITIALIZING_TIMEOUT_MS 10000   // 10 seconds - System initialization timeout
+#define ERROR_RECOVERY_TIMEOUT_MS 60000 // 60 seconds - Max time in ERROR state before force reset
 
 // ===== Debug Configuration =====
 // Compile-time debug level (0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG, 5=VERBOSE)
@@ -126,14 +126,14 @@
 #define CONNECTION_HEALTH_CHECK_INTERVAL 10000 // Connection health check interval (10s)
 
 // Reconnection Strategy
-#define RECONNECT_BASE_DELAY_MS 1000           // Base exponential backoff
-#define RECONNECT_MAX_DELAY_MS 60000           // Maximum backoff (60s)
-#define RECONNECT_JITTER_PERCENT 20            // Random jitter ±20%
+#define RECONNECT_BASE_DELAY_MS 1000 // Base exponential backoff
+#define RECONNECT_MAX_DELAY_MS 60000 // Maximum backoff (60s)
+#define RECONNECT_JITTER_PERCENT 20  // Random jitter ±20%
 
 // Network Quality Thresholds
-#define QUALITY_SCORE_THRESHOLD_DEGRADE 50     // Score to trigger degradation
-#define QUALITY_SCORE_THRESHOLD_SWITCH 40      // Score to trigger network switch
-#define RSSI_CRITICAL_THRESHOLD -85            // Critical signal strength
-#define PACKET_LOSS_THRESHOLD 10.0f            // Max packet loss before action (%)
+#define QUALITY_SCORE_THRESHOLD_DEGRADE 50 // Score to trigger degradation
+#define QUALITY_SCORE_THRESHOLD_SWITCH 40  // Score to trigger network switch
+#define RSSI_CRITICAL_THRESHOLD -85        // Critical signal strength
+#define PACKET_LOSS_THRESHOLD 10.0f        // Max packet loss before action (%)
 
 #endif // CONFIG_H

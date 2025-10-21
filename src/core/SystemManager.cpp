@@ -428,8 +428,12 @@ void SystemManager::performHealthChecks() {
         }
     }
     
-    if (health_status.cpu_load_percent > 0.9f) {
-        event_bus->publish(SystemEvent::CPU_OVERLOAD, &health_status);
+    static unsigned long last_cpu_warning = 0;
+    if (health_status.cpu_load_percent > 0.95f) {
+        if (millis() - last_cpu_warning > 60000) {
+            event_bus->publish(SystemEvent::CPU_OVERLOAD, &health_status);
+            last_cpu_warning = millis();
+        }
     }
     
     // Execute one step of recovery if in progress (non-blocking)
