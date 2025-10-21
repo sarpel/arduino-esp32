@@ -1,5 +1,7 @@
 #include "HealthMonitor.h"
 #include "../core/SystemManager.h"
+#include "../utils/EnhancedLogger.h"
+#include <memory>
 #include "../network/NetworkManager.h"
 #include "../utils/MemoryManager.h"
 

@@ -1,5 +1,8 @@
 #include "NetworkManager.h"
 #include "../core/SystemManager.h"
+#include "../utils/EnhancedLogger.h"
+#include <memory>
+#include "NetworkManager.h"
 
 // MultiWiFiManager implementation
 MultiWiFiManager::MultiWiFiManager() : current_network_index(0), last_switch_time(0) {}

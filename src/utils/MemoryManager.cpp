@@ -1,5 +1,7 @@
 #include "MemoryManager.h"
 #include "../core/SystemManager.h"
+#include "EnhancedLogger.h"
+#include <memory>
 
 // MemoryPool implementation
 MemoryPool::MemoryPool(size_t block_size, size_t pool_size)
@@ -85,9 +87,9 @@ bool MemoryManager::initialize(const MemoryConfig& cfg) {
     size_t general_buffer_size = 4096;  // General purpose buffer size
     
     // Initialize memory pools
-    audio_buffer_pool = std::make_unique<MemoryPool>(audio_buffer_size, config.audio_buffer_pool_size);
-    network_buffer_pool = std::make_unique<MemoryPool>(network_buffer_size, config.network_buffer_pool_size);
-    general_buffer_pool = std::make_unique<MemoryPool>(general_buffer_size, 10);  // 10 general buffers
+    audio_buffer_pool = std::unique_ptr<MemoryPool>(new MemoryPool(audio_buffer_size, config.audio_buffer_pool_size));
+    network_buffer_pool = std::unique_ptr<MemoryPool>(new MemoryPool(network_buffer_size, config.network_buffer_pool_size));
+    general_buffer_pool = std::unique_ptr<MemoryPool>(new MemoryPool(general_buffer_size, 10));  // 10 general buffers
     
     // Reset statistics
     resetStatistics();

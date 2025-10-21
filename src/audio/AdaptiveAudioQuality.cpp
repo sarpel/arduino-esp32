@@ -255,14 +255,14 @@ const char* AdaptiveAudioQuality::getConditionName(NetworkCondition condition) c
 void AdaptiveAudioQuality::printCurrentStatus() const {
     EnhancedLogger& logger = EnhancedLogger::getInstance();
     
-    logger.log(LogLevel::INFO, "=== Adaptive Audio Quality Status ===");
-    logger.log(LogLevel::INFO, "Enabled: %s", enabled ? "Yes" : "No");
-    logger.log(LogLevel::INFO, "Mode: %d", static_cast<int>(mode));
-    logger.log(LogLevel::INFO, "Current Condition: %s", getConditionName(current_condition));
-    logger.log(LogLevel::INFO, "Quality Level: %d", static_cast<int>(current_profile.target_quality));
-    logger.log(LogLevel::INFO, "Sample Rate: %u Hz", current_profile.sample_rate);
-    logger.log(LogLevel::INFO, "Bit Depth: %u bits", current_profile.bit_depth);
-    logger.log(LogLevel::INFO, "Compression Ratio: %.1f:1", current_profile.compression_ratio);
-    logger.log(LogLevel::INFO, "Adaptations: %u", adaptation_count);
-    logger.log(LogLevel::INFO, "Condition Changes: %u", condition_change_count);
+    logger.log(LogLevel::LOG_INFO, "=== Adaptive Audio Quality Status ===");
+    logger.log(LogLevel::LOG_INFO, "Enabled: %s", enabled ? "Yes" : "No");
+    logger.log(LogLevel::LOG_INFO, "Mode: %d", static_cast<int>(mode));
+    logger.log(LogLevel::LOG_INFO, "Current Condition: %s", getConditionName(current_condition));
+    logger.log(LogLevel::LOG_INFO, "Quality Level: %d", static_cast<int>(current_profile.target_quality));
+    logger.log(LogLevel::LOG_INFO, "Sample Rate: %u Hz", current_profile.sample_rate);
+    logger.log(LogLevel::LOG_INFO, "Bit Depth: %u bits", current_profile.bit_depth);
+    logger.log(LogLevel::LOG_INFO, "Compression Ratio: %.1f:1", current_profile.compression_ratio);
+    logger.log(LogLevel::LOG_INFO, "Adaptations: %u", adaptation_count);
+    logger.log(LogLevel::LOG_INFO, "Condition Changes: %u", condition_change_count);
 }

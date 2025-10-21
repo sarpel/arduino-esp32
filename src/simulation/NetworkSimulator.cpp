@@ -212,21 +212,21 @@ void NetworkSimulator::reset() {
 void NetworkSimulator::printSimulationStatus() const {
     EnhancedLogger& logger = EnhancedLogger::getInstance();
     
-    logger.log(LogLevel::INFO, "=== Network Simulator Status ===");
-    logger.log(LogLevel::INFO, "Enabled: %s", enabled ? "Yes" : "No");
-    logger.log(LogLevel::INFO, "Initialized: %s", initialized ? "Yes" : "No");
-    logger.log(LogLevel::INFO, "Condition: %d", static_cast<int>(current_condition));
-    logger.log(LogLevel::INFO, "");
-    logger.log(LogLevel::INFO, "=== Simulation Parameters ===");
-    logger.log(LogLevel::INFO, "RSSI: %d dBm", params.rssi);
-    logger.log(LogLevel::INFO, "Packet Loss: %.2f%%", params.packet_loss_percent);
-    logger.log(LogLevel::INFO, "Latency: %d ms", params.latency_ms);
-    logger.log(LogLevel::INFO, "Jitter: %.2f%%", params.jitter_percent);
-    logger.log(LogLevel::INFO, "Bandwidth: %.2f kbps", params.bandwidth_kbps);
-    logger.log(LogLevel::INFO, "");
-    logger.log(LogLevel::INFO, "=== Statistics ===");
-    logger.log(LogLevel::INFO, "Packets Dropped: %u", packets_dropped);
-    logger.log(LogLevel::INFO, "Packets Processed: %u", packets_processed);
-    logger.log(LogLevel::INFO, "Average Latency: %.2f ms", getAverageLatency());
-    logger.log(LogLevel::INFO, "Pending Packets: %u", static_cast<uint32_t>(delayed_packets.size()));
+    logger.log(LogLevel::LOG_INFO, "=== Network Simulator Status ===");
+    logger.log(LogLevel::LOG_INFO, "Enabled: %s", enabled ? "Yes" : "No");
+    logger.log(LogLevel::LOG_INFO, "Initialized: %s", initialized ? "Yes" : "No");
+    logger.log(LogLevel::LOG_INFO, "Condition: %d", static_cast<int>(current_condition));
+    logger.log(LogLevel::LOG_INFO, "");
+    logger.log(LogLevel::LOG_INFO, "=== Simulation Parameters ===");
+    logger.log(LogLevel::LOG_INFO, "RSSI: %d dBm", params.rssi);
+    logger.log(LogLevel::LOG_INFO, "Packet Loss: %.2f%%", params.packet_loss_percent);
+    logger.log(LogLevel::LOG_INFO, "Latency: %d ms", params.latency_ms);
+    logger.log(LogLevel::LOG_INFO, "Jitter: %.2f%%", params.jitter_percent);
+    logger.log(LogLevel::LOG_INFO, "Bandwidth: %.2f kbps", params.bandwidth_kbps);
+    logger.log(LogLevel::LOG_INFO, "");
+    logger.log(LogLevel::LOG_INFO, "=== Statistics ===");
+    logger.log(LogLevel::LOG_INFO, "Packets Dropped: %u", packets_dropped);
+    logger.log(LogLevel::LOG_INFO, "Packets Processed: %u", packets_processed);
+    logger.log(LogLevel::LOG_INFO, "Average Latency: %.2f ms", getAverageLatency());
+    logger.log(LogLevel::LOG_INFO, "Pending Packets: %u", static_cast<uint32_t>(delayed_packets.size()));
 }

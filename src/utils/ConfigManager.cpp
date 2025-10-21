@@ -1,5 +1,7 @@
 #include "ConfigManager.h"
 #include "../core/SystemManager.h"
+#include "EnhancedLogger.h"
+#include <memory>
 
 ConfigManager::ConfigManager()
     : active_profile(nullptr), use_file_config(false), use_network_config(false),

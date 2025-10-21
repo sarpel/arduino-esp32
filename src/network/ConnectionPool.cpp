@@ -8,7 +8,7 @@ ConnectionPool::ConnectionPool()
       total_reconnects(0), failovers(0) {
     
     for (uint8_t i = 0; i < MAX_CONNECTIONS; i++) {
-        connections.push_back(std::make_unique<PooledConnection>());
+        connections.push_back(std::make_shared<PooledConnection>());
         connections[i]->id = i;
     }
 }
@@ -292,14 +292,14 @@ void ConnectionPool::performHealthCheck() {
 void ConnectionPool::printPoolStatus() const {
     EnhancedLogger& logger = EnhancedLogger::getInstance();
     
-    logger.log(LogLevel::INFO, "=== Connection Pool Status ===");
-    logger.log(LogLevel::INFO, "Active Connections: %u", getActiveConnectionCount());
-    logger.log(LogLevel::INFO, "Total Reconnects: %u", total_reconnects);
-    logger.log(LogLevel::INFO, "Failovers: %u", failovers);
+    logger.log(LogLevel::LOG_INFO, "=== Connection Pool Status ===");
+    logger.log(LogLevel::LOG_INFO, "Active Connections: %u", getActiveConnectionCount());
+    logger.log(LogLevel::LOG_INFO, "Total Reconnects: %u", total_reconnects);
+    logger.log(LogLevel::LOG_INFO, "Failovers: %u", failovers);
     
     for (size_t i = 0; i < connections.size(); i++) {
         const auto& conn = connections[i];
-        logger.log(LogLevel::INFO, "Connection %u: State=%d, Errors=%u, Sent=%u, Received=%u",
+        logger.log(LogLevel::LOG_INFO, "Connection %u: State=%d, Errors=%u, Sent=%u, Received=%u",
                   i, static_cast<int>(conn->state), conn->error_count, 
                   conn->bytes_sent, conn->bytes_received);
     }

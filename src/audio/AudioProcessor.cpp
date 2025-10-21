@@ -1,8 +1,10 @@
 #include "AudioProcessor.h"
 #include "../core/SystemManager.h"
+#include "../utils/EnhancedLogger.h"
 #include "../i2s_audio.h"
 #include <cmath>
 #include <algorithm>
+#include <memory>
 
 // NoiseReducer implementation
 NoiseReducer::NoiseReducer() 

@@ -236,30 +236,30 @@ void SecurityManager::rotateEncryptionKey() {
 void SecurityManager::printSecurityStatus() const {
     EnhancedLogger& logger = EnhancedLogger::getInstance();
     
-    logger.log(LogLevel::INFO, "=== Security Manager Status ===");
-    logger.log(LogLevel::INFO, "Initialized: %s", initialized ? "Yes" : "No");
-    logger.log(LogLevel::INFO, "Encryption Method: %d", static_cast<int>(encryption_method));
-    logger.log(LogLevel::INFO, "Authentication Method: %d", static_cast<int>(auth_method));
-    logger.log(LogLevel::INFO, "Audit Enabled: %s", audit_enabled ? "Yes" : "No");
-    logger.log(LogLevel::INFO, "");
-    logger.log(LogLevel::INFO, "=== Authentication Statistics ===");
-    logger.log(LogLevel::INFO, "Total Attempts: %u", total_auth_attempts);
-    logger.log(LogLevel::INFO, "Successful: %u", successful_auth);
-    logger.log(LogLevel::INFO, "Failed: %u", failed_auth);
-    logger.log(LogLevel::INFO, "Success Rate: %.2f%%", getAuthSuccessRate());
-    logger.log(LogLevel::INFO, "");
-    logger.log(LogLevel::INFO, "=== Error Statistics ===");
-    logger.log(LogLevel::INFO, "Encryption Errors: %u", encryption_errors);
-    logger.log(LogLevel::INFO, "Decryption Errors: %u", decryption_errors);
-    logger.log(LogLevel::INFO, "Checksum Failures: %u", checksum_failures);
-    logger.log(LogLevel::INFO, "Unauthorized Attempts: %u", unauthorized_attempts);
+    logger.log(LogLevel::LOG_INFO, "=== Security Manager Status ===");
+    logger.log(LogLevel::LOG_INFO, "Initialized: %s", initialized ? "Yes" : "No");
+    logger.log(LogLevel::LOG_INFO, "Encryption Method: %d", static_cast<int>(encryption_method));
+    logger.log(LogLevel::LOG_INFO, "Authentication Method: %d", static_cast<int>(auth_method));
+    logger.log(LogLevel::LOG_INFO, "Audit Enabled: %s", audit_enabled ? "Yes" : "No");
+    logger.log(LogLevel::LOG_INFO, "");
+    logger.log(LogLevel::LOG_INFO, "=== Authentication Statistics ===");
+    logger.log(LogLevel::LOG_INFO, "Total Attempts: %u", total_auth_attempts);
+    logger.log(LogLevel::LOG_INFO, "Successful: %u", successful_auth);
+    logger.log(LogLevel::LOG_INFO, "Failed: %u", failed_auth);
+    logger.log(LogLevel::LOG_INFO, "Success Rate: %.2f%%", getAuthSuccessRate());
+    logger.log(LogLevel::LOG_INFO, "");
+    logger.log(LogLevel::LOG_INFO, "=== Error Statistics ===");
+    logger.log(LogLevel::LOG_INFO, "Encryption Errors: %u", encryption_errors);
+    logger.log(LogLevel::LOG_INFO, "Decryption Errors: %u", decryption_errors);
+    logger.log(LogLevel::LOG_INFO, "Checksum Failures: %u", checksum_failures);
+    logger.log(LogLevel::LOG_INFO, "Unauthorized Attempts: %u", unauthorized_attempts);
 }
 
 void SecurityManager::printAuditLog() const {
     EnhancedLogger& logger = EnhancedLogger::getInstance();
     
-    logger.log(LogLevel::INFO, "=== Security Audit Log ===");
-    logger.log(LogLevel::INFO, "Total Entries: %u", static_cast<uint32_t>(audit_logs.size()));
+    logger.log(LogLevel::LOG_INFO, "=== Security Audit Log ===");
+    logger.log(LogLevel::LOG_INFO, "Total Entries: %u", static_cast<uint32_t>(audit_logs.size()));
     
     for (const auto& log : audit_logs) {
         const char* event_name = "UNKNOWN";
@@ -286,7 +286,7 @@ void SecurityManager::printAuditLog() const {
                 break;
         }
         
-        logger.log(LogLevel::INFO, "[%u ms] %s: %s (Severity: %s)",
+        logger.log(LogLevel::LOG_INFO, "[%u ms] %s: %s (Severity: %s)",
                   log.timestamp, event_name, log.description,
                   log.severity ? "HIGH" : "LOW");
     }
