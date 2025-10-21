@@ -132,7 +132,7 @@ private:
             LOG_ERROR("Server PORT (%d) is invalid - must be 1-65535", SERVER_PORT);
             valid = false;
         } else {
-            LOG_INFO("  \u2713 Server PORT configured: %d", SERVER_PORT);
+            LOG_INFO("  ✓ Server PORT configured: %d", SERVER_PORT);
         }
         
         // Validate reconnection timeouts
