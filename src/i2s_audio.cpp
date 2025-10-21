@@ -36,8 +36,16 @@ bool I2SAudio::initialize() {
     // Install I2S driver
     esp_err_t result = i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL);
     if (result != ESP_OK) {
-        LOG_ERROR("I2S driver install failed: %d", result);
-        return false;
+        LOG_ERROR("I2S driver install failed (APLL on): %d", result);
+        // Retry without APLL as fallback for boards where APLL fails
+        i2s_config.use_apll = false;
+        result = i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL);
+        if (result != ESP_OK) {
+            LOG_ERROR("I2S driver install failed (APLL off): %d", result);
+            return false;
+        } else {
+            LOG_WARN("I2S initialized without APLL - clock stability reduced");
+        }
     }
 
     // Set I2S pin configuration

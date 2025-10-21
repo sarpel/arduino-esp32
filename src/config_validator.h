@@ -128,11 +128,11 @@ private:
         }
         
         // Check PORT
-        if (strlen(SERVER_PORT) == 0) {
-            LOG_ERROR("Server PORT is empty - must configure SERVER_PORT in config.h");
+        if (SERVER_PORT <= 0 || SERVER_PORT > 65535) {
+            LOG_ERROR("Server PORT (%d) is invalid - must be 1-65535", SERVER_PORT);
             valid = false;
         } else {
-            LOG_INFO("  ✓ Server PORT configured: %s", SERVER_PORT);
+            LOG_INFO("  ✓ Server PORT configured: %d", SERVER_PORT);
         }
         
         // Validate reconnection timeouts
@@ -309,10 +309,10 @@ private:
         if (WATCHDOG_TIMEOUT_SEC <= 0) {
             LOG_ERROR("WATCHDOG_TIMEOUT_SEC must be > 0, got %u seconds", WATCHDOG_TIMEOUT_SEC);
             valid = false;
-        } else if (WATCHDOG_TIMEOUT_SEC < 5) {
-            LOG_WARN("WATCHDOG_TIMEOUT_SEC (%u sec) is very short - minimum recommended is 5 seconds", WATCHDOG_TIMEOUT_SEC);
+        } else if (WATCHDOG_TIMEOUT_SEC < 30) {
+            LOG_WARN("WATCHDOG_TIMEOUT_SEC (%u sec) is short - recommend >= 30 seconds", WATCHDOG_TIMEOUT_SEC);
         } else {
-            LOG_INFO("  ✓ Watchdog timeout: %u seconds", WATCHDOG_TIMEOUT_SEC);
+            LOG_INFO("  \u2713 Watchdog timeout: %u seconds", WATCHDOG_TIMEOUT_SEC);
         }
 
         // Verify watchdog timeout doesn't conflict with WiFi timeout
@@ -321,7 +321,7 @@ private:
             LOG_WARN("WATCHDOG_TIMEOUT_SEC (%u) <= WIFI_TIMEOUT (%u sec) - watchdog may reset during WiFi connection",
                      WATCHDOG_TIMEOUT_SEC, wifi_timeout_sec);
         } else {
-            LOG_INFO("  ✓ Watchdog timeout compatible with WiFi timeout");
+            LOG_INFO("  \u2713 Watchdog timeout compatible with WiFi timeout");
         }
 
         // Verify watchdog timeout doesn't conflict with error recovery delay
@@ -331,12 +331,12 @@ private:
                      WATCHDOG_TIMEOUT_SEC, error_delay_sec);
             valid = false;
         } else {
-            LOG_INFO("  ✓ Watchdog timeout compatible with error recovery delay");
+            LOG_INFO("  \u2713 Watchdog timeout compatible with error recovery delay");
         }
 
         // Verify watchdog is long enough for state operations
         // Typical operations: WiFi ~25s, I2S read ~1ms, TCP write ~100ms
-        if (WATCHDOG_TIMEOUT_SEC < (wifi_timeout_sec + 2)) {
+        if (WATCHDOG_TIMEOUT_SEC < (wifi_timeout_sec + 5)) {
             LOG_WARN("WATCHDOG_TIMEOUT_SEC (%u) is close to WIFI_TIMEOUT (%u sec) - margin may be tight",
                      WATCHDOG_TIMEOUT_SEC, wifi_timeout_sec);
         }

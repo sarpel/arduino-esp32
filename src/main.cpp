@@ -168,8 +168,20 @@ void gracefulShutdown() {
 
 // ===== Setup =====
 void setup() {
-    // Initialize logger
-    Logger::init(LOG_INFO);
+    // Initialize logger (align with compile-time DEBUG_LEVEL)
+    LogLevel bootLogLevel = LOG_INFO;
+    #if DEBUG_LEVEL >= 4
+        bootLogLevel = LOG_DEBUG;
+    #elif DEBUG_LEVEL == 3
+        bootLogLevel = LOG_INFO;
+    #elif DEBUG_LEVEL == 2
+        bootLogLevel = LOG_WARN;
+    #elif DEBUG_LEVEL == 1
+        bootLogLevel = LOG_ERROR;
+    #else
+        bootLogLevel = LOG_CRITICAL;
+    #endif
+    Logger::init(bootLogLevel);
     LOG_INFO("========================================");
     LOG_INFO("ESP32 Audio Streamer Starting Up");
     LOG_INFO("Board: %s", BOARD_NAME);
@@ -215,6 +227,11 @@ void setup() {
 
     // Move to WiFi connection state
     systemState.setState(SystemState::CONNECTING_WIFI);
+
+    // Initialize and configure watchdog to a safe timeout
+    // Ensure timeout comfortably exceeds WiFi timeouts and recovery delays
+    esp_task_wdt_init(WATCHDOG_TIMEOUT_SEC, true);
+    esp_task_wdt_add(NULL);
 
     LOG_INFO("Setup complete - entering main loop");
 }
