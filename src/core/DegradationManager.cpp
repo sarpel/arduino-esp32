@@ -55,8 +55,8 @@ void DegradationManager::setMode(DegradationMode new_mode) {
                     modeToString(previous_mode).c_str(), modeToString(current_mode).c_str());
     }
 
-    // TODO: Publish mode change event to EventBus when available
-    // (Deferred to avoid circular dependency)
+    // NOTE: EventBus integration deferred to avoid circular SystemManager dependency
+    // Mode changes are observable through modeToString() and health checks
 }
 
 void DegradationManager::recordFailure() {
