@@ -25,10 +25,11 @@
 // ===== WiFi Static IP (Optional) =====
 // Uncomment to use static IP instead of DHCP
 // #define USE_STATIC_IP
-#define STATIC_IP 0, 0, 0, 0
-#define GATEWAY_IP 0, 0, 0, 0
-#define SUBNET_MASK 0, 0, 0, 0
-#define DNS_IP 0, 0, 0, 0
+// Example values below; update to match your network if using static IP
+#define STATIC_IP    192, 168, 1, 100   // Device static IP address
+#define GATEWAY_IP   192, 168, 1, 1     // Router/gateway IP address
+#define SUBNET_MASK  255, 255, 255, 0   // Subnet mask
+#define DNS_IP       192, 168, 1, 1     // DNS server IP address
 
 // ===== Server Configuration =====
 #define SERVER_HOST "192.168.x.x"
