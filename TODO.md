@@ -376,72 +376,109 @@ ESP.getHeapFragmentation()  // Not available on all ESP32 variants
 
 ---
 
-## Compilation Error Distribution
+## Compilation Error Distribution - Phase 2a Update
 
-| Issue Type | Count | Priority | Difficulty |
-|------------|-------|----------|------------|
-| Circular Dependencies | 78 | HIGH | HARD |
-| Incomplete Types | 65 | HIGH | MEDIUM |
-| Logger Issues | 40 | MEDIUM | EASY |
-| Arduino API Compatibility | 20 | MEDIUM | MEDIUM |
-| Other Issues | 10 | LOW | VARIES |
-| **TOTAL** | **213** | | |
+| Issue Type | Original | Phase 1 | Phase 2a | Remaining | Priority | Difficulty |
+|------------|----------|---------|---------|-----------|----------|------------|
+| Logger Issues | 40 | 40 (fixed) | 52 (fixed) | 30+ | MEDIUM | EASY |
+| Logger getInstance() | - | - | - | 5 | MEDIUM | EASY |
+| Arduino API Compatibility | 20 | 18 | 2 (fixed) | 2 | MEDIUM | MEDIUM |
+| Static Member Access | - | - | - | 6 | HIGH | MEDIUM |
+| String Type Issues | - | - | - | 3 | MEDIUM | MEDIUM |
+| Smart Pointer Logic | - | - | - | 3 | MEDIUM | HARD |
+| Circular Dependencies | 78 | 78 | - | ~30 | HIGH | HARD |
+| Incomplete Types | 65 | 65 | - | ~20 | HIGH | MEDIUM |
+| C++11 Compatibility | - | - | 9 (fixed) | - | HIGH | EASY |
+| Other Issues | 180 | - | 41 (fixed) | 10 | LOW | VARIES |
+| **TOTAL** | **383** | **213** | **104 fixed** | **109** | | |
 
----
-
-## Recommended Fix Strategy
-
-### Phase 1: Quick Wins (Target: Reduce to 170 errors)
-
-**Duration**: 30-60 minutes
-
-1. **Fix All Logger Issues** (40 errors → 0)
-   - Add complete EnhancedLogger.h includes where needed
-   - Create logger helper function to access through SystemManager
-   - Update all logger call sites with complete includes
-
-2. **Fix Arduino API Compatibility** (20 errors → 0)
-   - Create compatibility wrapper for ESP.getHeapFragmentation()
-   - Handle LED_BUILTIN with platform detection
-   - Add feature detection macros
-
-3. **Expected Result**: 213 → 153 errors
+**Progress Metrics**:
+- Phase 1: 383 → 213 (44% reduction, 170 errors fixed)
+- Phase 2a: 213 → 109 (49% reduction, 104 errors fixed)
+- **Total**: 383 → 109 (71% reduction, 274 errors fixed)
 
 ---
 
-### Phase 2: Architectural Refactoring (Target: Reduce to 50 errors)
+## Recommended Fix Strategy - Updated After Phase 2a
 
-**Duration**: 2-4 hours
+### ✅ Phase 1: Include Path & Enum Fixes (COMPLETED)
+**Status**: COMPLETE | Duration: ~2 hours | Result: 383 → 213 errors (44% reduction)
 
-1. **Break Circular Dependencies** (78 errors → ~20)
+Fixed include paths, enum naming, and basic compatibility issues
+
+---
+
+### ✅ Phase 2a: Logger Signatures & C++11 (COMPLETED)
+**Status**: COMPLETE | Duration: ~3 hours | Result: 213 → 109 errors (49% reduction)
+
+Fixed logger call signatures (52+ instances), C++11 compatibility (9 make_unique), enum namespacing (100+ refs)
+
+---
+
+### Phase 2b: Logger Access & Static Members (Target: 50 errors)
+
+**Duration**: 1-2 hours | **Priority**: HIGH | **Difficulty**: EASY-MEDIUM
+
+1. **Fix Logger getInstance() Access** (5 errors → 0)
+   - Replace `EnhancedLogger::getInstance()` with `SystemManager::getInstance().getLogger()`
+   - Affected: src/network/ConnectionPool.cpp
+   - **Impact**: -5 errors | **Difficulty**: EASY
+
+2. **Complete Logger Signature Fixes** (30+ errors → 0)
+   - Add __FILE__ and __LINE__ to remaining logger calls in HealthMonitor
+   - Fix String type inconsistencies in lambdas with explicit return types
+   - Affected: src/monitoring/HealthMonitor.cpp, src/network/NetworkManager.cpp
+   - **Impact**: -30 errors | **Difficulty**: EASY
+
+3. **Fix Static Member Access** (6 errors → 0)
+   - Refactor MemoryManager::getAllocationType() to access instance members
+   - Convert static methods to instance methods or use static storage
+   - Affected: src/utils/MemoryManager.cpp
+   - **Impact**: -6 errors | **Difficulty**: MEDIUM
+
+4. **Expected Result**: 109 → ~68 errors
+
+---
+
+### Phase 2c: WiFi & Smart Pointers (Target: 30 errors)
+
+**Duration**: 1 hour | **Priority**: MEDIUM | **Difficulty**: MEDIUM-HARD
+
+1. **WiFi API Compatibility** (2 errors → 0)
+   - Add #ifdef guards for WiFi API calls
+   - Create compatibility wrapper for setKeepAlive()
+   - Handle const WiFiClient method access issues
+   - Affected: src/network/NetworkManager.cpp, ConnectionPool.cpp
+   - **Impact**: -2 errors
+
+2. **Smart Pointer Logic** (3 errors → 0)
+   - Refactor operator&& expressions with smart pointers
+   - Fix void return type comparisons
+   - Affected: src/utils/MemoryManager.cpp
+   - **Impact**: -3 errors
+
+3. **Expected Result**: ~68 → ~63 errors
+
+---
+
+### Phase 3: Architectural Refactoring (Target: Full Compilation)
+
+**Duration**: 2-3 hours | **Priority**: HIGH | **Difficulty**: HARD
+
+1. **Circular Dependencies** (~30-40 errors)
+   - Reorganize SystemManager includes/forward declarations
+   - Use Pimpl pattern for complex dependencies
+   - Create accessor functions for cross-module references
    - **Option A**: Move SystemManager implementations to .cpp file
    - **Option B**: Use Pimpl pattern for forward-declared classes
    - **Option C**: Create intermediate accessor classes
 
-2. **Fix Incomplete Type Issues** (65 errors → ~30)
-   - Move static member implementations to .cpp
-   - Provide full type definitions where methods are called
-   - Use type erasure for forward-declared types where appropriate
+2. **Incomplete Type Issues** (~20 errors)
+   - Move inline implementations to .cpp files
+   - Provide full type definitions at call sites
+   - Use type erasure for forward-declared types
 
-3. **Expected Result**: 153 → 50 errors
-
----
-
-### Phase 3: Final Polish (Target: Full Compilation)
-
-**Duration**: 1-2 hours
-
-1. **Resolve Remaining Issues**
-   - Handle any residual incomplete type errors
-   - Fix remaining logger access issues
-   - Address build system warnings
-
-2. **Testing & Validation**
-   - Run full compilation multiple times
-   - Verify no new warnings introduced
-   - Test basic functionality
-
-3. **Expected Result**: 50 → 0 errors (Full compilation success)
+3. **Expected Result**: ~63 → 0 errors (Full compilation success)
 
 ---
 
@@ -538,14 +575,16 @@ static uint16_t getHeapFragmentation() {
 
 ## Git Commits Reference
 
-### Completed Commits
+### ✅ Completed Commits
 1. **ccce8f7**: Fix compilation errors: Add includes and enum naming fixes (170 errors reduced)
 2. **eb7a6af**: Reduce compilation errors from 383 to 213 (44% reduction)
+3. **996f831**: Phase 2a fixes - Logger signatures, enum namespacing, C++11 compatibility (104 errors reduced)
+4. **66bb170**: Update TODO.md with Phase 2a completion summary
 
-### To Be Created
-- [ ] Phase 2a: Break circular dependencies and fix logger issues
-- [ ] Phase 2b: Fix incomplete type issues and static members
-- [ ] Phase 3: Resolve remaining errors and validate compilation
+### Next Commits
+- [ ] Phase 2b: Logger access patterns and static member fixes (Target: 68 errors)
+- [ ] Phase 2c: WiFi API compatibility and smart pointer logic (Target: 63 errors)
+- [ ] Phase 3: Architectural refactoring for circular dependencies (Target: Full compilation)
 
 ---
 
@@ -607,9 +646,20 @@ pio run 2>&1 | tee build.log
 
 For questions about specific errors or implementation approaches, refer to the git commit messages and code comments for context and reasoning.
 
-**Last Status Update**: ccce8f7 & eb7a6af commits
-**Total Effort**: ~4 hours of fixes applied
-**Estimated Remaining Work**: 3-5 hours for full compilation success
+**Last Status Update**: Phase 2a Complete (commits 996f831 & 66bb170)
+**Total Effort**: ~5-6 hours of fixes applied (Phases 1+2a)
+**Estimated Remaining Work**: 4-6 hours for full compilation success (Phases 2b+2c+3)
+
+### Session Summary (Phase 2a)
+- Duration: ~3 hours
+- Errors Fixed: 104
+- Key Accomplishments:
+  - Standardized 52+ logger call signatures with __FILE__ and __LINE__
+  - Fixed C++11 compatibility (9 make_unique replacements)
+  - Fixed 100+ enum namespace references
+  - Added Arduino API compatibility wrappers
+  - Added missing includes across 12+ files
+- Overall Project Progress: 274 errors fixed out of 383 (71% complete)
 
 ---
 
