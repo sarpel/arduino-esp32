@@ -22,7 +22,7 @@ SystemManager::SystemManager()
       cycle_start_time(0) {
     
     // Initialize context
-    context.uptime_start = millis();
+    context.uptime_ms = 0;
     context.current_state = SystemState::INITIALIZING;
     context.previous_state = SystemState::INITIALIZING;
 }
@@ -51,43 +51,43 @@ bool SystemManager::initialize() {
         return false;
     }
     
-    logger->log(LOG_INFO, "SystemManager", "========================================");
-    logger->log(LOG_INFO, "SystemManager", "ESP32 Audio Streamer v3.0 - System Startup");
-    logger->log(LOG_INFO, "SystemManager", "Enhanced Architecture with Modular Design");
-    logger->log(LOG_INFO, "SystemManager", "========================================");
+    logger->info( "SystemManager", "========================================");
+    logger->info( "SystemManager", "ESP32 Audio Streamer v3.0 - System Startup");
+    logger->info( "SystemManager", "Enhanced Architecture with Modular Design");
+    logger->info( "SystemManager", "========================================");
     
     if (!initializeMemoryManager()) {
-        logger->log(LOG_CRITICAL, "SystemManager", "MemoryManager initialization failed");
+        logger->critical( "SystemManager", "MemoryManager initialization failed");
         return false;
     }
     
     if (!initializeConfigManager()) {
-        logger->log(LOG_CRITICAL, "SystemManager", "ConfigManager initialization failed");
+        logger->critical( "SystemManager", "ConfigManager initialization failed");
         return false;
     }
     
     if (!initializeEventBus()) {
-        logger->log(LOG_CRITICAL, "SystemManager", "EventBus initialization failed");
+        logger->critical( "SystemManager", "EventBus initialization failed");
         return false;
     }
     
     if (!initializeStateMachine()) {
-        logger->log(LOG_CRITICAL, "SystemManager", "StateMachine initialization failed");
+        logger->critical( "SystemManager", "StateMachine initialization failed");
         return false;
     }
     
     if (!initializeAudioProcessor()) {
-        logger->log(LOG_CRITICAL, "SystemManager", "AudioProcessor initialization failed");
+        logger->critical( "SystemManager", "AudioProcessor initialization failed");
         return false;
     }
     
     if (!initializeNetworkManager()) {
-        logger->log(LOG_CRITICAL, "SystemManager", "NetworkManager initialization failed");
+        logger->critical( "SystemManager", "NetworkManager initialization failed");
         return false;
     }
     
     if (!initializeHealthMonitor()) {
-        logger->log(LOG_CRITICAL, "SystemManager", "HealthMonitor initialization failed");
+        logger->critical( "SystemManager", "HealthMonitor initialization failed");
         return false;
     }
     
@@ -102,74 +102,74 @@ bool SystemManager::initialize() {
     system_initialized = true;
     system_running = true;
     
-    logger->log(LOG_INFO, "SystemManager", "System initialization completed successfully");
-    logger->log(LOG_INFO, "SystemManager", "Free memory: %u bytes", context.free_memory);
-    logger->log(LOG_INFO, "SystemManager", "Main loop frequency: %u Hz", MAIN_LOOP_FREQUENCY_HZ);
+    logger->info( "SystemManager", "System initialization completed successfully");
+    logger->info( "SystemManager", "Free memory: %u bytes", context.free_memory);
+    logger->info( "SystemManager", "Main loop frequency: %u Hz", MAIN_LOOP_FREQUENCY_HZ);
     
     return true;
 }
 
 bool SystemManager::initializeEventBus() {
-    event_bus = std::make_unique<EventBus>();
+    event_bus = std::unique_ptr<EventBus>();
     if (!event_bus->initialize()) {
         return false;
     }
     
-    logger->log(LOG_INFO, "SystemManager", "EventBus initialized");
+    logger->info( "SystemManager", "EventBus initialized");
     return true;
 }
 
 bool SystemManager::initializeStateMachine() {
-    state_machine = std::make_unique<StateMachine>();
+    state_machine = std::unique_ptr<StateMachine>();
     if (!state_machine->initialize()) {
         return false;
     }
     
     // Set up state change callback
-    state_machine->onStateChange([this](SystemState from, SystemState to) {
+    state_machine->onStateChange([this](SystemState from, SystemState to, StateTransitionReason reason) {
         context.previous_state = from;
         context.current_state = to;
-        logger->log(LOG_INFO, "SystemManager", "State transition: %s → %s",
-                   state_machine->stateToString(from).c_str(),
-                   state_machine->stateToString(to).c_str());
+        logger->info( "SystemManager", "State transition from %d to %d",
+                   static_cast<int>(from),
+                   static_cast<int>(to));
     });
     
-    logger->log(LOG_INFO, "SystemManager", "StateMachine initialized");
+    logger->info( "SystemManager", "StateMachine initialized");
     return true;
 }
 
 bool SystemManager::initializeAudioProcessor() {
-    audio_processor = std::make_unique<AudioProcessor>();
+    audio_processor = std::unique_ptr<AudioProcessor>();
     if (!audio_processor->initialize()) {
         return false;
     }
     
-    logger->log(LOG_INFO, "SystemManager", "AudioProcessor initialized");
+    logger->info( "SystemManager", "AudioProcessor initialized");
     return true;
 }
 
 bool SystemManager::initializeNetworkManager() {
-    network_manager = std::make_unique<NetworkManager>();
+    network_manager = std::unique_ptr<NetworkManager>();
     if (!network_manager->initialize()) {
         return false;
     }
     
-    logger->log(LOG_INFO, "SystemManager", "NetworkManager initialized");
+    logger->info( "SystemManager", "NetworkManager initialized");
     return true;
 }
 
 bool SystemManager::initializeHealthMonitor() {
-    health_monitor = std::make_unique<HealthMonitor>();
+    health_monitor = std::unique_ptr<HealthMonitor>(new HealthMonitor());
     if (!health_monitor->initialize()) {
         return false;
     }
     
-    logger->log(LOG_INFO, "SystemManager", "HealthMonitor initialized");
+    logger->info( "SystemManager", "HealthMonitor initialized");
     return true;
 }
 
 bool SystemManager::initializeLogger() {
-    logger = std::make_unique<EnhancedLogger>();
+    logger = std::unique_ptr<EnhancedLogger>(new EnhancedLogger());
     if (!logger->initialize()) {
         return false;
     }
@@ -178,17 +178,17 @@ bool SystemManager::initializeLogger() {
 }
 
 bool SystemManager::initializeConfigManager() {
-    config_manager = std::make_unique<ConfigManager>();
+    config_manager = std::unique_ptr<ConfigManager>(new ConfigManager());
     if (!config_manager->initialize()) {
         return false;
     }
     
-    logger->log(LOG_INFO, "SystemManager", "ConfigManager initialized");
+    logger->info( "SystemManager", "ConfigManager initialized");
     return true;
 }
 
 bool SystemManager::initializeMemoryManager() {
-    memory_manager = std::make_unique<MemoryManager>();
+    memory_manager = std::unique_ptr<MemoryManager>(new MemoryManager());
     if (!memory_manager->initialize()) {
         return false;
     }
@@ -196,18 +196,18 @@ bool SystemManager::initializeMemoryManager() {
     // Update initial memory stats
     updateMemoryStats();
     
-    logger->log(LOG_INFO, "SystemManager", "MemoryManager initialized");
+    logger->info( "SystemManager", "MemoryManager initialized");
     return true;
 }
 
 void SystemManager::run() {
     if (!system_initialized) {
-        logger->log(LOG_CRITICAL, "SystemManager", "System not initialized - cannot run");
+        logger->critical( "SystemManager", "System not initialized - cannot run");
         return;
     }
     
     if (!system_running) {
-        logger->log(LOG_WARN, "SystemManager", "System not running - starting now");
+        logger->warn( "SystemManager", "System not running - starting now");
         system_running = true;
     }
     
@@ -220,7 +220,7 @@ void SystemManager::run() {
         
         // Check for emergency stop
         if (emergency_stop) {
-            logger->log(LOG_CRITICAL, "SystemManager", "Emergency stop activated");
+            logger->critical( "SystemManager", "Emergency stop activated");
             emergencyShutdown();
             break;
         }
@@ -288,7 +288,7 @@ void SystemManager::run() {
                         // Audio read failed
                         context.audio_errors++;
                         if (context.audio_errors > MAX_CONSECUTIVE_FAILURES) {
-                            logger->log(LOG_ERROR, "SystemManager", "Too many audio errors - reinitializing");
+                            logger->error( "SystemManager", "Too many audio errors - reinitializing");
                             audio_processor->reinitialize();
                             context.audio_errors = 0;
                         }
@@ -320,12 +320,13 @@ void SystemManager::run() {
         context.cycle_count++;
     }
     
-    logger->log(LOG_INFO, "SystemManager", "Main loop terminated");
+    logger->info( "SystemManager", "Main loop terminated");
 }
 
 void SystemManager::updateContext() {
-    // Update timing
-    context.uptime_ms = millis() - context.uptime_start;
+    // Update timing (uptime is tracked in milliseconds)
+    static unsigned long system_start_time = millis();
+    context.uptime_ms = millis() - system_start_time;
     
     // Update performance metrics
     measureCPULoad();
@@ -382,7 +383,7 @@ void SystemManager::performHealthChecks() {
         event_bus->publish(SystemEvent::MEMORY_CRITICAL, &health_status);
     }
     
-    if (health_status.cpu_load > 0.9f) {
+    if (health_status.cpu_load_percent > 0.9f) {
         event_bus->publish(SystemEvent::CPU_OVERLOAD, &health_status);
     }
 }
@@ -392,14 +393,14 @@ void SystemManager::handleSystemEvent(SystemEvent event, const void* data) {
         case SystemEvent::SYSTEM_ERROR:
             consecutive_errors++;
             if (consecutive_errors >= MAX_CONSECUTIVE_ERRORS) {
-                logger->log(LOG_CRITICAL, "SystemManager", "Too many consecutive errors - entering safe mode");
+                logger->critical( "SystemManager", "Too many consecutive errors - entering safe mode");
                 enterSafeMode();
             }
             break;
             
         case SystemEvent::SYSTEM_RECOVERY:
             consecutive_errors = 0;
-            logger->log(LOG_INFO, "SystemManager", "System recovered from error state");
+            logger->info( "SystemManager", "System recovered from error state");
             break;
             
         default:
@@ -411,11 +412,11 @@ void SystemManager::handleAudioEvent(SystemEvent event, const void* data) {
     switch (event) {
         case SystemEvent::AUDIO_PROCESSING_ERROR:
             context.audio_errors++;
-            logger->log(LOG_ERROR, "SystemManager", "Audio processing error detected");
+            logger->error( "SystemManager", "Audio processing error detected");
             break;
             
         case SystemEvent::AUDIO_QUALITY_DEGRADED:
-            logger->log(LOG_WARN, "SystemManager", "Audio quality degraded");
+            logger->warn( "SystemManager", "Audio quality degraded");
             break;
             
         default:
@@ -427,7 +428,7 @@ void SystemManager::handleNetworkEvent(SystemEvent event, const void* data) {
     switch (event) {
         case SystemEvent::NETWORK_DISCONNECTED:
             context.connection_drops++;
-            logger->log(LOG_WARN, "SystemManager", "Network connection lost");
+            logger->warn( "SystemManager", "Network connection lost");
             break;
             
         default:
@@ -438,7 +439,7 @@ void SystemManager::handleNetworkEvent(SystemEvent event, const void* data) {
 void SystemManager::handleHealthEvent(SystemEvent event, const void* data) {
     switch (event) {
         case SystemEvent::MEMORY_CRITICAL:
-            logger->log(LOG_CRITICAL, "SystemManager", "Critical memory situation detected");
+            logger->critical( "SystemManager", "Critical memory situation detected");
             memory_manager->emergencyCleanup();
             break;
             
@@ -448,7 +449,7 @@ void SystemManager::handleHealthEvent(SystemEvent event, const void* data) {
 }
 
 void SystemManager::handleErrors() {
-    logger->log(LOG_ERROR, "SystemManager", "System in error state - attempting recovery");
+    logger->error( "SystemManager", "System in error state - attempting recovery");
     
     // Try to recover from error state
     if (health_monitor && health_monitor->canAutoRecover()) {
@@ -462,7 +463,7 @@ void SystemManager::handleErrors() {
 }
 
 void SystemManager::enterSafeMode() {
-    logger->log(LOG_CRITICAL, "SystemManager", "Entering safe mode - minimal functionality");
+    logger->critical( "SystemManager", "Entering safe mode - minimal functionality");
     
     // Disable non-critical components
     if (audio_processor) audio_processor->setSafeMode(true);
@@ -473,7 +474,7 @@ void SystemManager::enterSafeMode() {
 }
 
 void SystemManager::emergencyShutdown() {
-    logger->log(LOG_CRITICAL, "SystemManager", "Emergency shutdown initiated");
+    logger->critical( "SystemManager", "Emergency shutdown initiated");
     
     system_running = false;
     
@@ -483,24 +484,24 @@ void SystemManager::emergencyShutdown() {
     if (health_monitor) health_monitor->shutdown();
     if (logger) logger->shutdown();
     
-    logger->log(LOG_CRITICAL, "SystemManager", "Emergency shutdown completed");
+    logger->critical( "SystemManager", "Emergency shutdown completed");
 }
 
 void SystemManager::shutdown() {
-    logger->log(LOG_INFO, "SystemManager", "System shutdown initiated");
+    logger->info( "SystemManager", "System shutdown initiated");
     
     system_running = false;
     
     // Print final statistics
-    logger->log(LOG_INFO, "SystemManager", "========================================");
-    logger->log(LOG_INFO, "SystemManager", "Final System Statistics:");
-    logger->log(LOG_INFO, "SystemManager", "Uptime: %lu seconds", context.uptime_ms / 1000);
-    logger->log(LOG_INFO, "SystemManager", "Cycles completed: %u", context.cycle_count);
-    logger->log(LOG_INFO, "SystemManager", "Audio samples processed: %u", context.audio_samples_processed);
-    logger->log(LOG_INFO, "SystemManager", "Bytes sent: %u", context.bytes_sent);
-    logger->log(LOG_INFO, "SystemManager", "Total errors: %u", context.total_errors);
-    logger->log(LOG_INFO, "SystemManager", "Fatal errors: %u", context.fatal_errors);
-    logger->log(LOG_INFO, "SystemManager", "========================================");
+    logger->info( "SystemManager", "========================================");
+    logger->info( "SystemManager", "Final System Statistics:");
+    logger->info( "SystemManager", "Uptime: %lu seconds", context.uptime_ms / 1000);
+    logger->info( "SystemManager", "Cycles completed: %u", context.cycle_count);
+    logger->info( "SystemManager", "Audio samples processed: %u", context.audio_samples_processed);
+    logger->info( "SystemManager", "Bytes sent: %u", context.bytes_sent);
+    logger->info( "SystemManager", "Total errors: %u", context.total_errors);
+    logger->info( "SystemManager", "Fatal errors: %u", context.fatal_errors);
+    logger->info( "SystemManager", "========================================");
     
     // Graceful component shutdown
     if (network_manager) network_manager->shutdown();
@@ -512,7 +513,7 @@ void SystemManager::shutdown() {
     if (state_machine) state_machine->shutdown();
     if (logger) logger->shutdown();
     
-    logger->log(LOG_INFO, "SystemManager", "System shutdown completed");
+    logger->info( "SystemManager", "System shutdown completed");
 }
 
 void SystemManager::reportError(const char* component, const char* error_msg, bool fatal) {
@@ -521,8 +522,11 @@ void SystemManager::reportError(const char* component, const char* error_msg, bo
         context.fatal_errors++;
     }
     
-    logger->log(fatal ? LOG_CRITICAL : LOG_ERROR, "SystemManager", 
-                "[%s] %s", component, error_msg);
+    if (fatal) {
+        logger->critical("SystemManager", "[%s] %s", component, error_msg);
+    } else {
+        logger->error("SystemManager", "[%s] %s", component, error_msg);
+    }
     
     event_bus->publish(fatal ? SystemEvent::SYSTEM_ERROR : SystemEvent::SYSTEM_ERROR);
 }

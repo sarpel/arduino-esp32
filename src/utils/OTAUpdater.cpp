@@ -1,5 +1,7 @@
 #include "OTAUpdater.h"
 #include "../core/SystemManager.h"
+#include "EnhancedLogger.h"
+#include <vector>
 
 OTAUpdater::OTAUpdater()
     : http_client(nullptr), https_client(nullptr), initialized(false),
@@ -24,7 +26,7 @@ bool OTAUpdater::initialize(const OTAConfig& cfg) {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "OTAUpdater", "Initializing OTAUpdater");
+        logger->info( "OTAUpdater", "Initializing OTAUpdater");
     }
     
     // Initialize network clients
@@ -38,7 +40,7 @@ bool OTAUpdater::initialize(const OTAConfig& cfg) {
     setStatusCallback([this](const String& status) {
         auto logger = SystemManager::getInstance().getLogger();
         if (logger) {
-            logger->log(LOG_INFO, "OTAUpdater", "%s", status.c_str());
+            logger->info( "OTAUpdater", "%s", status.c_str());
         }
     });
     
@@ -46,7 +48,7 @@ bool OTAUpdater::initialize(const OTAConfig& cfg) {
         if (progress.progress_percent % 10 == 0) {
             auto logger = SystemManager::getInstance().getLogger();
             if (logger) {
-                logger->log(LOG_INFO, "OTAUpdater", "Update progress: %u%% - %s",
+                logger->info( "OTAUpdater", "Update progress: %u%% - %s",
                            progress.progress_percent, progress.current_action.c_str());
             }
         }
@@ -55,7 +57,7 @@ bool OTAUpdater::initialize(const OTAConfig& cfg) {
     initialized = true;
     
     if (logger) {
-        logger->log(LOG_INFO, "OTAUpdater", "OTAUpdater initialized - version: %s",
+        logger->info( "OTAUpdater", "OTAUpdater initialized - version: %s",
                    config.current_version.c_str());
     }
     
@@ -69,7 +71,7 @@ void OTAUpdater::shutdown() {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "OTAUpdater", "Shutting down OTAUpdater");
+        logger->info( "OTAUpdater", "Shutting down OTAUpdater");
         printStatistics();
     }
     
@@ -101,7 +103,7 @@ bool OTAUpdater::checkForUpdate() {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "OTAUpdater", "Checking for updates");
+        logger->info( "OTAUpdater", "Checking for updates");
     }
     
     updateProgress(OTAState::CHECKING_FOR_UPDATE, "Checking for available updates");
@@ -120,14 +122,14 @@ bool OTAUpdater::checkForUpdate() {
         updates_found++;
         
         if (logger) {
-            logger->log(LOG_INFO, "OTAUpdater", "Update available: version %s, size: %u bytes",
+            logger->info( "OTAUpdater", "Update available: version %s, size: %u bytes",
                        available_update.version.c_str(), available_update.size);
         }
         
         updateProgress(OTAState::IDLE, "Update available");
     } else {
         if (logger) {
-            logger->log(LOG_INFO, "OTAUpdater", "No updates available");
+            logger->info( "OTAUpdater", "No updates available");
         }
         
         updateProgress(OTAState::IDLE, "No updates available");
@@ -147,7 +149,7 @@ bool OTAUpdater::checkForUpdateHTTP() {
         available_update.description = "Bug fixes and performance improvements";
         available_update.download_url = config.update_server_url + "/firmware.bin";
         available_update.size = 500000;  // 500KB
-        available_release_date = "2025-10-21";
+        available_update.release_date = "2025-10-21";
         available_update.mandatory = false;
         
         return true;
@@ -172,7 +174,7 @@ bool OTAUpdater::downloadUpdate() {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "OTAUpdater", "Starting update download");
+        logger->info( "OTAUpdater", "Starting update download");
     }
     
     updateProgress(OTAState::DOWNLOADING_UPDATE, "Downloading update", 0, available_update.size);
@@ -203,7 +205,7 @@ bool OTAUpdater::downloadUpdate() {
     }
     
     if (logger) {
-        logger->log(LOG_INFO, "OTAUpdater", "Update download completed");
+        logger->info( "OTAUpdater", "Update download completed");
     }
     
     updateProgress(OTAState::IDLE, "Download completed");
@@ -222,7 +224,7 @@ bool OTAUpdater::installUpdate() {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "OTAUpdater", "Starting update installation");
+        logger->info( "OTAUpdater", "Starting update installation");
     }
     
     updateProgress(OTAState::VERIFYING_UPDATE, "Verifying update");
@@ -248,7 +250,7 @@ bool OTAUpdater::installUpdate() {
     
     if (result) {
         if (logger) {
-            logger->log(LOG_INFO, "OTAUpdater", "Update applied successfully");
+            logger->info( "OTAUpdater", "Update applied successfully");
         }
         
         updateProgress(OTAState::COMPLETED, "Update completed successfully");
@@ -262,7 +264,7 @@ bool OTAUpdater::installUpdate() {
         update_failures++;
         
         if (logger) {
-            logger->log(LOG_ERROR, "OTAUpdater", "Update installation failed");
+            logger->error( "OTAUpdater", "Update installation failed");
         }
         
         updateProgress(OTAState::ERROR, "Update installation failed");
@@ -342,7 +344,7 @@ bool OTAUpdater::applyUpdate() {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "OTAUpdater", "Applying firmware update");
+        logger->info( "OTAUpdater", "Applying firmware update");
     }
     
     // Simulate update process
@@ -379,9 +381,7 @@ void OTAUpdater::updateProgress(OTAState state, const String& action, size_t cur
         current_progress.total_size = total;
         current_progress.progress_percent = (current * 100) / total;
     }
-    
-    current_progress.last_progress_update = millis();
-    
+
     // Calculate estimated time remaining (simplified)
     if (current > 0 && total > 0) {
         unsigned long elapsed = millis() - current_progress.start_time;
@@ -403,7 +403,7 @@ void OTAUpdater::reportError(const String& error) {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_ERROR, "OTAUpdater", "%s", error.c_str());
+        logger->error( "OTAUpdater", "%s", error.c_str());
     }
     
     if (status_callback) {
@@ -414,7 +414,7 @@ void OTAUpdater::reportError(const String& error) {
 void OTAUpdater::reportStatus(const String& status) {
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "OTAUpdater", "%s", status.c_str());
+        logger->info( "OTAUpdater", "%s", status.c_str());
     }
     
     if (status_callback) {
@@ -481,7 +481,7 @@ bool OTAUpdater::cancelUpdate() {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "OTAUpdater", "Update cancelled");
+        logger->info( "OTAUpdater", "Update cancelled");
     }
     
     updateProgress(OTAState::IDLE, "Update cancelled");
@@ -496,35 +496,35 @@ void OTAUpdater::printUpdateInfo() const {
     auto logger = SystemManager::getInstance().getLogger();
     if (!logger) return;
     
-    logger->log(LOG_INFO, "OTAUpdater", "=== Update Information ===");
-    logger->log(LOG_INFO, "OTAUpdater", "Current version: %s", config.current_version.c_str());
+    logger->info( "OTAUpdater", "=== Update Information ===");
+    logger->info( "OTAUpdater", "Current version: %s", config.current_version.c_str());
     
     if (isUpdateAvailable()) {
-        logger->log(LOG_INFO, "OTAUpdater", "Available version: %s", available_update.version.c_str());
-        logger->log(LOG_INFO, "OTAUpdater", "Description: %s", available_update.description.c_str());
-        logger->log(LOG_INFO, "OTAUpdater", "Size: %u bytes", available_update.size);
-        logger->log(LOG_INFO, "OTAUpdater", "Release date: %s", available_update.release_date.c_str());
-        logger->log(LOG_INFO, "OTAUpdater", "Mandatory: %s", available_update.mandatory ? "yes" : "no");
+        logger->info( "OTAUpdater", "Available version: %s", available_update.version.c_str());
+        logger->info( "OTAUpdater", "Description: %s", available_update.description.c_str());
+        logger->info( "OTAUpdater", "Size: %u bytes", available_update.size);
+        logger->info( "OTAUpdater", "Release date: %s", available_update.release_date.c_str());
+        logger->info( "OTAUpdater", "Mandatory: %s", available_update.mandatory ? "yes" : "no");
     } else {
-        logger->log(LOG_INFO, "OTAUpdater", "No updates available");
+        logger->info( "OTAUpdater", "No updates available");
     }
     
-    logger->log(LOG_INFO, "OTAUpdater", "==========================");
+    logger->info( "OTAUpdater", "==========================");
 }
 
 void OTAUpdater::printStatistics() const {
     auto logger = SystemManager::getInstance().getLogger();
     if (!logger) return;
     
-    logger->log(LOG_INFO, "OTAUpdater", "=== OTA Update Statistics ===");
-    logger->log(LOG_INFO, "OTAUpdater", "Total checks: %u", total_checks);
-    logger->log(LOG_INFO, "OTAUpdater", "Updates found: %u", updates_found);
-    logger->log(LOG_INFO, "OTAUpdater", "Updates downloaded: %u", updates_downloaded);
-    logger->log(LOG_INFO, "OTAUpdater", "Updates applied: %u", updates_applied);
-    logger->log(LOG_INFO, "OTAUpdater", "Update failures: %u", update_failures);
-    logger->log(LOG_INFO, "OTAUpdater", "Success rate: %.1f%%",
+    logger->info( "OTAUpdater", "=== OTA Update Statistics ===");
+    logger->info( "OTAUpdater", "Total checks: %u", total_checks);
+    logger->info( "OTAUpdater", "Updates found: %u", updates_found);
+    logger->info( "OTAUpdater", "Updates downloaded: %u", updates_downloaded);
+    logger->info( "OTAUpdater", "Updates applied: %u", updates_applied);
+    logger->info( "OTAUpdater", "Update failures: %u", update_failures);
+    logger->info( "OTAUpdater", "Success rate: %.1f%%",
                total_checks > 0 ? (static_cast<float>(updates_applied) / total_checks) * 100.0f : 0.0f);
-    logger->log(LOG_INFO, "OTAUpdater", "============================");
+    logger->info( "OTAUpdater", "============================");
 }
 
 void OTAUpdater::resetStatistics() {
@@ -553,7 +553,7 @@ bool OTAUpdater::backupCurrentFirmware(const String& backup_name) {
     // Firmware backup implementation would go here
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "OTAUpdater", "Creating firmware backup: %s", backup_name.c_str());
+        logger->info( "OTAUpdater", "Creating firmware backup: %s", backup_name.c_str());
     }
     return true;
 }
@@ -562,7 +562,7 @@ bool OTAUpdater::restoreFirmware(const String& backup_name) {
     // Firmware restore implementation would go here
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "OTAUpdater", "Restoring firmware from backup: %s", backup_name.c_str());
+        logger->info( "OTAUpdater", "Restoring firmware from backup: %s", backup_name.c_str());
     }
     return true;
 }
@@ -571,7 +571,7 @@ bool OTAUpdater::downloadUpdateToFile(const String& file_path) {
     // Download update to file implementation would go here
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "OTAUpdater", "Downloading update to file: %s", file_path.c_str());
+        logger->info( "OTAUpdater", "Downloading update to file: %s", file_path.c_str());
     }
     return true;
 }
@@ -580,7 +580,7 @@ bool OTAUpdater::installUpdateFromFile(const String& file_path) {
     // Install update from file implementation would go here
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "OTAUpdater", "Installing update from file: %s", file_path.c_str());
+        logger->info( "OTAUpdater", "Installing update from file: %s", file_path.c_str());
     }
     return true;
 }

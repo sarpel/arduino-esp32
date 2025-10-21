@@ -1,5 +1,6 @@
 #include "ProtocolHandler.h"
 #include "../utils/EnhancedLogger.h"
+#include "../core/SystemManager.h"
 #include <cstring>
 #include <algorithm>
 
@@ -184,17 +185,18 @@ std::vector<uint8_t> ProtocolHandler::buildHeartbeatPacket() {
 }
 
 void ProtocolHandler::printStatistics() const {
-    EnhancedLogger& logger = EnhancedLogger::getInstance();
-    
-    logger.log(LogLevel::INFO, "=== Protocol Handler Statistics ===");
-    logger.log(LogLevel::INFO, "Version: %d", static_cast<int>(version));
-    logger.log(LogLevel::INFO, "Total Sent: %u", statistics.total_sent);
-    logger.log(LogLevel::INFO, "Total Received: %u", statistics.total_received);
-    logger.log(LogLevel::INFO, "ACKs Sent: %u", statistics.acks_sent);
-    logger.log(LogLevel::INFO, "ACKs Received: %u", statistics.acks_received);
-    logger.log(LogLevel::INFO, "Retransmissions: %u", statistics.retransmissions);
-    logger.log(LogLevel::INFO, "Dropped Packets: %u", statistics.dropped_packets);
-    logger.log(LogLevel::INFO, "Checksum Failures: %u", statistics.checksum_failures);
-    logger.log(LogLevel::INFO, "Average RTT: %.2f ms", statistics.average_rtt_ms);
-    logger.log(LogLevel::INFO, "Packet Loss Rate: %.2f%%", statistics.packet_loss_rate * 100.0f);
+    auto logger = SystemManager::getInstance().getLogger();
+    if (!logger) return;
+
+    logger->log(LogLevel::LOG_INFO, "ProtocolHandler", __FILE__, __LINE__, "=== Protocol Handler Statistics ===");
+    logger->log(LogLevel::LOG_INFO, "ProtocolHandler", __FILE__, __LINE__, "Version: %d", static_cast<int>(version));
+    logger->log(LogLevel::LOG_INFO, "ProtocolHandler", __FILE__, __LINE__, "Total Sent: %u", statistics.total_sent);
+    logger->log(LogLevel::LOG_INFO, "ProtocolHandler", __FILE__, __LINE__, "Total Received: %u", statistics.total_received);
+    logger->log(LogLevel::LOG_INFO, "ProtocolHandler", __FILE__, __LINE__, "ACKs Sent: %u", statistics.acks_sent);
+    logger->log(LogLevel::LOG_INFO, "ProtocolHandler", __FILE__, __LINE__, "ACKs Received: %u", statistics.acks_received);
+    logger->log(LogLevel::LOG_INFO, "ProtocolHandler", __FILE__, __LINE__, "Retransmissions: %u", statistics.retransmissions);
+    logger->log(LogLevel::LOG_INFO, "ProtocolHandler", __FILE__, __LINE__, "Dropped Packets: %u", statistics.dropped_packets);
+    logger->log(LogLevel::LOG_INFO, "ProtocolHandler", __FILE__, __LINE__, "Checksum Failures: %u", statistics.checksum_failures);
+    logger->log(LogLevel::LOG_INFO, "ProtocolHandler", __FILE__, __LINE__, "Average RTT: %.2f ms", statistics.average_rtt_ms);
+    logger->log(LogLevel::LOG_INFO, "ProtocolHandler", __FILE__, __LINE__, "Packet Loss Rate: %.2f%%", statistics.packet_loss_rate * 100.0f);
 }

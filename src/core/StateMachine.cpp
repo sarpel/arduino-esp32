@@ -1,9 +1,8 @@
 #include "StateMachine.h"
 #include "../utils/EnhancedLogger.h"
-
-// Forward declaration to avoid circular dependency
-class SystemManager;
-SystemManager& SystemManager::getInstance();
+#include "../core/SystemManager.h"
+#include "../network/NetworkManager.h"
+#include "../monitoring/HealthMonitor.h"
 
 bool StateMachine::initialize() {
     if (initialized) {
@@ -199,7 +198,7 @@ bool StateMachine::setState(SystemState new_state, StateTransitionReason reason,
     if (!initialized) {
         auto logger = SystemManager::getInstance().getLogger();
         if (logger) {
-            logger->log(LOG_ERROR, "StateMachine", "Cannot set state - StateMachine not initialized");
+            logger->log(LogLevel::LOG_ERROR, "StateMachine", __FILE__, __LINE__, "Cannot set state - StateMachine not initialized");
         }
         return false;
     }
@@ -213,7 +212,7 @@ bool StateMachine::setState(SystemState new_state, StateTransitionReason reason,
     if (!validateTransition(current_state, new_state, reason)) {
         auto logger = SystemManager::getInstance().getLogger();
         if (logger) {
-            logger->log(LOG_WARN, "StateMachine", "State transition %s → %s not allowed (reason: %u)",
+            logger->log(LogLevel::LOG_WARN, "StateMachine", __FILE__, __LINE__, "State transition %s → %s not allowed (reason: %u)",
                        getCurrentStateName().c_str(), getStateName(new_state).c_str(), 
                        static_cast<unsigned int>(reason));
         }
@@ -224,7 +223,7 @@ bool StateMachine::setState(SystemState new_state, StateTransitionReason reason,
     if (!checkExitConditions(current_state)) {
         auto logger = SystemManager::getInstance().getLogger();
         if (logger) {
-            logger->log(LOG_WARN, "StateMachine", "Cannot exit current state %s - conditions not met",
+            logger->log(LogLevel::LOG_WARN, "StateMachine", __FILE__, __LINE__, "Cannot exit current state %s - conditions not met",
                        getCurrentStateName().c_str());
         }
         return false;
@@ -234,7 +233,7 @@ bool StateMachine::setState(SystemState new_state, StateTransitionReason reason,
     if (!checkEntryConditions(new_state)) {
         auto logger = SystemManager::getInstance().getLogger();
         if (logger) {
-            logger->log(LOG_WARN, "StateMachine", "Cannot enter state %s - conditions not met",
+            logger->log(LogLevel::LOG_WARN, "StateMachine", __FILE__, __LINE__, "Cannot enter state %s - conditions not met",
                        getStateName(new_state).c_str());
         }
         return false;
@@ -276,7 +275,7 @@ bool StateMachine::setState(SystemState new_state, StateTransitionReason reason,
     // Log the transition
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "StateMachine", "State transition: %s → %s (reason: %u, desc: %s)",
+        logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "State transition: %s → %s (reason: %u, desc: %s)",
                    getStateName(old_state).c_str(), getStateName(new_state).c_str(),
                    static_cast<unsigned int>(reason), description ? description : "none");
     }
@@ -311,7 +310,7 @@ bool StateMachine::forceState(SystemState new_state, StateTransitionReason reaso
     // Log the forced transition
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_WARN, "StateMachine", "Forced state transition: %s → %s (reason: %u, desc: %s)",
+        logger->log(LogLevel::LOG_WARN, "StateMachine", __FILE__, __LINE__, "Forced state transition: %s → %s (reason: %u, desc: %s)",
                    getStateName(old_state).c_str(), getStateName(new_state).c_str(),
                    static_cast<unsigned int>(reason), description ? description : "none");
     }
@@ -387,7 +386,7 @@ bool StateMachine::checkEntryConditions(SystemState state) {
             if (!result) {
                 auto logger = SystemManager::getInstance().getLogger();
                 if (logger) {
-                    logger->log(LOG_WARN, "StateMachine", "Entry condition failed for state %s: %s",
+                    logger->log(LogLevel::LOG_WARN, "StateMachine", __FILE__, __LINE__, "Entry condition failed for state %s: %s",
                                getStateName(state).c_str(), condition.description);
                 }
                 return false;
@@ -426,7 +425,7 @@ bool StateMachine::checkExitConditions(SystemState state) {
             if (!result) {
                 auto logger = SystemManager::getInstance().getLogger();
                 if (logger) {
-                    logger->log(LOG_WARN, "StateMachine", "Exit condition failed for state %s: %s",
+                    logger->log(LogLevel::LOG_WARN, "StateMachine", __FILE__, __LINE__, "Exit condition failed for state %s: %s",
                                getStateName(state).c_str(), condition.description);
                 }
                 return false;
@@ -612,47 +611,47 @@ void StateMachine::printCurrentState() const {
     auto logger = SystemManager::getInstance().getLogger();
     if (!logger) return;
     
-    logger->log(LOG_INFO, "StateMachine", "=== Current State ===");
-    logger->log(LOG_INFO, "StateMachine", "State: %s", getCurrentStateName().c_str());
-    logger->log(LOG_INFO, "StateMachine", "Description: %s", getStateDescription(current_state));
-    logger->log(LOG_INFO, "StateMachine", "Duration: %lu ms", getStateDuration());
-    logger->log(LOG_INFO, "StateMachine", "Previous: %s", getPreviousStateName().c_str());
-    logger->log(LOG_INFO, "StateMachine", "====================");
+    logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "=== Current State ===");
+    logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "State: %s", getCurrentStateName().c_str());
+    logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "Description: %s", getStateDescription(current_state));
+    logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "Duration: %lu ms", getStateDuration());
+    logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "Previous: %s", getPreviousStateName().c_str());
+    logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "====================");
 }
 
 void StateMachine::printStatistics() const {
     auto logger = SystemManager::getInstance().getLogger();
     if (!logger) return;
     
-    logger->log(LOG_INFO, "StateMachine", "=== State Machine Statistics ===");
-    logger->log(LOG_INFO, "StateMachine", "Total transitions: %u", stats.total_transitions);
-    logger->log(LOG_INFO, "StateMachine", "Successful: %u (%.1f%%)", 
+    logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "=== State Machine Statistics ===");
+    logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "Total transitions: %u", stats.total_transitions);
+    logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "Successful: %u (%.1f%%)", 
                stats.successful_transitions, getOverallSuccessRate());
-    logger->log(LOG_INFO, "StateMachine", "Failed: %u", stats.failed_transitions);
-    logger->log(LOG_INFO, "StateMachine", "Timeout transitions: %u", stats.timeout_transitions);
-    logger->log(LOG_INFO, "StateMachine", "Error transitions: %u", stats.error_transitions);
-    logger->log(LOG_INFO, "StateMachine", "Time in current state: %lu ms", getStateDuration());
-    logger->log(LOG_INFO, "StateMachine", "Time since last transition: %lu ms", getTimeSinceLastTransition());
+    logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "Failed: %u", stats.failed_transitions);
+    logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "Timeout transitions: %u", stats.timeout_transitions);
+    logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "Error transitions: %u", stats.error_transitions);
+    logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "Time in current state: %lu ms", getStateDuration());
+    logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "Time since last transition: %lu ms", getTimeSinceLastTransition());
     
-    logger->log(LOG_INFO, "StateMachine", "--- State Entry Counts ---");
+    logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "--- State Entry Counts ---");
     for (const auto& pair : stats.state_entry_counts) {
-        logger->log(LOG_INFO, "StateMachine", "%s: %u entries", 
+        logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "%s: %u entries", 
                    getStateName(pair.first).c_str(), pair.second);
     }
     
-    logger->log(LOG_INFO, "StateMachine", "=============================");
+    logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "=============================");
 }
 
 void StateMachine::printHistory() const {
     auto logger = SystemManager::getInstance().getLogger();
     if (!logger) return;
     
-    logger->log(LOG_INFO, "StateMachine", "=== State Transition History ===");
-    logger->log(LOG_INFO, "StateMachine", "Showing last %u transitions:", transition_history.size());
+    logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "=== State Transition History ===");
+    logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "Showing last %u transitions:", transition_history.size());
     
     for (size_t i = 0; i < transition_history.size(); i++) {
         const auto& transition = transition_history[i];
-        logger->log(LOG_INFO, "StateMachine", "%u: %s → %s (reason: %u, success: %s, time: %lu)",
+        logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "%u: %s → %s (reason: %u, success: %s, time: %lu)",
                    i, getStateName(transition.from_state).c_str(),
                    getStateName(transition.to_state).c_str(),
                    static_cast<unsigned int>(transition.reason),
@@ -660,7 +659,7 @@ void StateMachine::printHistory() const {
                    transition.transition_time);
     }
     
-    logger->log(LOG_INFO, "StateMachine", "===============================");
+    logger->log(LogLevel::LOG_INFO, "StateMachine", __FILE__, __LINE__, "===============================");
 }
 
 bool StateMachine::validateStateMachine() const {

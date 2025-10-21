@@ -1,5 +1,6 @@
 #include "EventBus.h"
 #include "../utils/EnhancedLogger.h"
+#include "SystemManager.h"
 
 bool EventBus::initialize() {
     if (initialized) {
@@ -24,7 +25,7 @@ bool EventBus::initialize() {
     // Log initialization
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LogLevel::LOG_INFO, "EventBus", "EventBus initialized - max queue size: %u", MAX_QUEUE_SIZE);
+        logger->log(LogLevel::LOG_INFO, "EventBus", __FILE__, __LINE__, "EventBus initialized - max queue size: %u", MAX_QUEUE_SIZE);
     }
     
     return true;
@@ -38,7 +39,7 @@ void EventBus::shutdown() {
     // Log shutdown statistics
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_INFO, "EventBus", "EventBus shutting down - processed: %u, dropped: %u, errors: %u",
+        logger->log(LogLevel::LOG_INFO, "EventBus", __FILE__, __LINE__, "EventBus shutting down - processed: %u, dropped: %u, errors: %u",
                    stats.total_events_processed, stats.events_dropped, stats.handler_errors);
     }
     
@@ -59,7 +60,7 @@ bool EventBus::subscribe(SystemEvent event, EventHandler handler,
     if (!initialized) {
         auto logger = SystemManager::getInstance().getLogger();
         if (logger) {
-            logger->log(LOG_ERROR, "EventBus", "Cannot subscribe - EventBus not initialized");
+            logger->log(LogLevel::LOG_ERROR, "EventBus", __FILE__, __LINE__, "Cannot subscribe - EventBus not initialized");
         }
         return false;
     }
@@ -67,7 +68,7 @@ bool EventBus::subscribe(SystemEvent event, EventHandler handler,
     if (!handler) {
         auto logger = SystemManager::getInstance().getLogger();
         if (logger) {
-            logger->log(LOG_ERROR, "EventBus", "Cannot subscribe - invalid handler");
+            logger->log(LogLevel::LOG_ERROR, "EventBus", __FILE__, __LINE__, "Cannot subscribe - invalid handler");
         }
         return false;
     }
@@ -77,7 +78,7 @@ bool EventBus::subscribe(SystemEvent event, EventHandler handler,
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_DEBUG, "EventBus", "Subscribed %s to event %s (priority: %s)",
+        logger->log(LogLevel::LOG_DEBUG, "EventBus", __FILE__, __LINE__, "Subscribed %s to event %s (priority: %s)",
                    component_name, getEventName(event), getPriorityName(max_priority));
     }
     
@@ -130,7 +131,7 @@ bool EventBus::publish(SystemEvent event, const void* data,
     if (!initialized) {
         auto logger = SystemManager::getInstance().getLogger();
         if (logger) {
-            logger->log(LOG_ERROR, "EventBus", "Cannot publish - EventBus not initialized");
+            logger->log(LogLevel::LOG_ERROR, "EventBus", __FILE__, __LINE__, "Cannot publish - EventBus not initialized");
         }
         return false;
     }
@@ -139,7 +140,7 @@ bool EventBus::publish(SystemEvent event, const void* data,
     if (isQueueFull()) {
         auto logger = SystemManager::getInstance().getLogger();
         if (logger) {
-            logger->log(LOG_WARN, "EventBus", "Event queue full - dropping event %s from %s",
+            logger->log(LogLevel::LOG_WARN, "EventBus", __FILE__, __LINE__, "Event queue full - dropping event %s from %s",
                        getEventName(event), source_component);
         }
         stats.events_dropped++;
@@ -157,7 +158,7 @@ bool EventBus::publish(SystemEvent event, const void* data,
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger && priority <= EventPriority::HIGH_PRIORITY) {
-        logger->log(LOG_DEBUG, "EventBus", "Queued event %s from %s (priority: %s, queue: %u)",
+        logger->log(LogLevel::LOG_DEBUG, "EventBus", __FILE__, __LINE__, "Queued event %s from %s (priority: %s, queue: %u)",
                    getEventName(event), source_component, getPriorityName(priority), 
                    event_queue.size());
     }
@@ -182,7 +183,7 @@ bool EventBus::publishImmediate(SystemEvent event, const void* data,
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger && priority <= EventPriority::HIGH_PRIORITY) {
-        logger->log(LOG_DEBUG, "EventBus", "Processed immediate event %s from %s (priority: %s)",
+        logger->log(LogLevel::LOG_DEBUG, "EventBus", __FILE__, __LINE__, "Processed immediate event %s from %s (priority: %s)",
                    getEventName(event), source_component, getPriorityName(priority));
     }
     
@@ -217,7 +218,7 @@ void EventBus::processEvents(uint32_t max_time_ms) {
     if (processed_count > 0) {
         auto logger = SystemManager::getInstance().getLogger();
         if (logger) {
-            logger->log(LOG_DEBUG, "EventBus", "Processed %u events in %lu ms (queue: %u)",
+            logger->log(LogLevel::LOG_DEBUG, "EventBus", __FILE__, __LINE__, "Processed %u events in %lu ms (queue: %u)",
                        processed_count, millis() - start_time, event_queue.size());
         }
     }
@@ -230,7 +231,7 @@ bool EventBus::shouldProcessEvent(const EventMetadata& event) {
     if (millis() - event.timestamp > EVENT_TIMEOUT_MS) {
         auto logger = SystemManager::getInstance().getLogger();
         if (logger) {
-            logger->log(LOG_WARN, "EventBus", "Event %s timed out after %lu ms",
+            logger->log(LogLevel::LOG_WARN, "EventBus", __FILE__, __LINE__, "Event %s timed out after %lu ms",
                        getEventName(event.type), millis() - event.timestamp);
         }
         return false;
@@ -268,7 +269,7 @@ void EventBus::processEvent(const EventMetadata& event) {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger && event.priority <= EventPriority::HIGH_PRIORITY) {
-        logger->log(LOG_DEBUG, "EventBus", "Event %s processed: %u handlers called, %u failed",
+        logger->log(LogLevel::LOG_DEBUG, "EventBus", __FILE__, __LINE__, "Event %s processed: %u handlers called, %u failed",
                    getEventName(event.type), handlers_called, handlers_failed);
     }
 }
@@ -278,7 +279,7 @@ void EventBus::dropEvent(const EventMetadata& event) {
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_WARN, "EventBus", "Dropped event %s from %s (timeout: %lu ms)",
+        logger->log(LogLevel::LOG_WARN, "EventBus", __FILE__, __LINE__, "Dropped event %s from %s (timeout: %lu ms)",
                    getEventName(event.type), event.source_component, 
                    millis() - event.timestamp);
     }
@@ -295,7 +296,7 @@ void EventBus::handleHandlerError(const EventMetadata& event, const char* error)
     
     auto logger = SystemManager::getInstance().getLogger();
     if (logger) {
-        logger->log(LOG_ERROR, "EventBus", "Handler error for event %s: %s",
+        logger->log(LogLevel::LOG_ERROR, "EventBus", __FILE__, __LINE__, "Handler error for event %s: %s",
                    getEventName(event.type), error);
     }
 }
@@ -346,10 +347,10 @@ const char* EventBus::getEventName(SystemEvent event) const {
 
 const char* EventBus::getPriorityName(EventPriority priority) const {
     switch (priority) {
-        case EventPriority::CRITICAL: return "CRITICAL";
-        case EventPriority::HIGH: return "HIGH";
-        case EventPriority::NORMAL: return "NORMAL";
-        case EventPriority::LOW: return "LOW";
+        case EventPriority::CRITICAL_PRIORITY: return "CRITICAL";
+        case EventPriority::HIGH_PRIORITY: return "HIGH";
+        case EventPriority::NORMAL_PRIORITY: return "NORMAL";
+        case EventPriority::LOW_PRIORITY: return "LOW";
         default: return "UNKNOWN_PRIORITY";
     }
 }
@@ -358,24 +359,24 @@ void EventBus::printStatistics() const {
     auto logger = SystemManager::getInstance().getLogger();
     if (!logger) return;
     
-    logger->log(LOG_INFO, "EventBus", "=== EventBus Statistics ===");
-    logger->log(LOG_INFO, "EventBus", "Total published: %u", stats.total_events_published);
-    logger->log(LOG_INFO, "EventBus", "Total processed: %u", stats.total_events_processed);
-    logger->log(LOG_INFO, "EventBus", "Dropped: %u", stats.events_dropped);
-    logger->log(LOG_INFO, "EventBus", "Handler errors: %u", stats.handler_errors);
-    logger->log(LOG_INFO, "EventBus", "Current queue size: %u", event_queue.size());
+    logger->log(LogLevel::LOG_INFO, "EventBus", __FILE__, __LINE__, "=== EventBus Statistics ===");
+    logger->log(LogLevel::LOG_INFO, "EventBus", __FILE__, __LINE__, "Total published: %u", stats.total_events_published);
+    logger->log(LogLevel::LOG_INFO, "EventBus", __FILE__, __LINE__, "Total processed: %u", stats.total_events_processed);
+    logger->log(LogLevel::LOG_INFO, "EventBus", __FILE__, __LINE__, "Dropped: %u", stats.events_dropped);
+    logger->log(LogLevel::LOG_INFO, "EventBus", __FILE__, __LINE__, "Handler errors: %u", stats.handler_errors);
+    logger->log(LogLevel::LOG_INFO, "EventBus", __FILE__, __LINE__, "Current queue size: %u", event_queue.size());
     
-    logger->log(LOG_INFO, "EventBus", "--- Event Type Counts ---");
+    logger->log(LogLevel::LOG_INFO, "EventBus", __FILE__, __LINE__, "--- Event Type Counts ---");
     for (const auto& pair : stats.event_type_counts) {
-        logger->log(LOG_INFO, "EventBus", "%s: %u", getEventName(pair.first), pair.second);
+        logger->log(LogLevel::LOG_INFO, "EventBus", __FILE__, __LINE__, "%s: %u", getEventName(pair.first), pair.second);
     }
     
-    logger->log(LOG_INFO, "EventBus", "--- Priority Counts ---");
+    logger->log(LogLevel::LOG_INFO, "EventBus", __FILE__, __LINE__, "--- Priority Counts ---");
     for (const auto& pair : stats.priority_counts) {
-        logger->log(LOG_INFO, "EventBus", "%s: %u", getPriorityName(pair.first), pair.second);
+        logger->log(LogLevel::LOG_INFO, "EventBus", __FILE__, __LINE__, "%s: %u", getPriorityName(pair.first), pair.second);
     }
     
-    logger->log(LOG_INFO, "EventBus", "========================");
+    logger->log(LogLevel::LOG_INFO, "EventBus", __FILE__, __LINE__, "========================");
 }
 
 void EventBus::resetStatistics() {

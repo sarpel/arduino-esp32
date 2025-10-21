@@ -4,6 +4,8 @@
 #include <Arduino.h>
 #include <Update.h>
 #include <WiFiClientSecure.h>
+#include <vector>
+#include <functional>
 #include "../core/SystemManager.h"
 
 // OTA update states
@@ -110,7 +112,6 @@ private:
     // Internal methods
     bool checkForUpdateHTTP();
     bool checkForUpdateHTTPS();
-    bool downloadUpdate();
     ValidationResult validateUpdate();
     bool applyUpdate();
     bool verifySignature();

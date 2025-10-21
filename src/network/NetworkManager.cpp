@@ -172,8 +172,8 @@ void NetworkManager::shutdown() {
         printStatistics();
     }
     
-    disconnectFromServer();
-    disconnectFromWiFi();
+    disconnectFromServerInternal();
+    disconnectFromWiFiInternal();
     
     initialized = false;
 }
@@ -244,7 +244,7 @@ void NetworkManager::handleWiFiConnection() {
     }
 }
 
-bool NetworkManager::connectToWiFi() {
+bool NetworkManager::connectToWiFiInternal() {
     if (wifi_manager->hasNetworks()) {
         return wifi_manager->connectToBestNetwork();
     } else {
@@ -261,7 +261,7 @@ bool NetworkManager::connectToWiFi() {
     }
 }
 
-bool NetworkManager::connectToServer() {
+bool NetworkManager::connectToServerInternal() {
     if (!wifi_connected || safe_mode) {
         return false;
     }
@@ -307,7 +307,7 @@ bool NetworkManager::connectToServer() {
     }
 }
 
-void NetworkManager::disconnectFromWiFi() {
+void NetworkManager::disconnectFromWiFiInternal() {
     if (wifi_connected) {
         wifi_connected = false;
         WiFi.disconnect();
@@ -319,7 +319,7 @@ void NetworkManager::disconnectFromWiFi() {
     }
 }
 
-void NetworkManager::disconnectFromServer() {
+void NetworkManager::disconnectFromServerInternal() {
     if (server_connected) {
         server_connected = false;
         client.stop();
@@ -351,7 +351,7 @@ bool NetworkManager::writeData(const uint8_t* data, size_t length) {
         
         // Connection might be broken
         if (!client.connected()) {
-            disconnectFromServer();
+            disconnectFromServerInternal();
         }
         
         return false;

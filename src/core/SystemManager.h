@@ -17,50 +17,6 @@ class EnhancedLogger;
 class ConfigManager;
 class MemoryManager;
 
-// Forward declarations
-class AudioProcessor;
-class NetworkManager;
-class HealthMonitor;
-class EnhancedLogger;
-class ConfigManager;
-class MemoryManager;
-
-enum class SystemEvent {
-    // System events
-    SYSTEM_STARTUP,
-    SYSTEM_SHUTDOWN,
-    SYSTEM_ERROR,
-    SYSTEM_RECOVERY,
-    
-    // Audio events
-    AUDIO_DATA_AVAILABLE,
-    AUDIO_PROCESSING_ERROR,
-    AUDIO_QUALITY_DEGRADED,
-    
-    // Network events
-    NETWORK_CONNECTED,
-    NETWORK_DISCONNECTED,
-    NETWORK_QUALITY_CHANGED,
-    SERVER_CONNECTED,
-    SERVER_DISCONNECTED,
-    
-    // Health events
-    MEMORY_LOW,
-    MEMORY_CRITICAL,
-    CPU_OVERLOAD,
-    TEMPERATURE_HIGH,
-    
-    // Configuration events
-    CONFIG_CHANGED,
-    CONFIG_INVALID,
-    PROFILE_LOADED,
-    
-    // Security events
-    SECURITY_BREACH,
-    AUTHENTICATION_FAILED,
-    ENCRYPTION_ERROR
-};
-
 struct SystemContext {
     // System state
     SystemState current_state;

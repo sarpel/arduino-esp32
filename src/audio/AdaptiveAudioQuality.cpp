@@ -20,7 +20,7 @@ bool AdaptiveAudioQuality::initialize(NetworkManager* net_mgr, AudioProcessor* a
     network_manager = net_mgr;
     audio_processor = audio_proc;
     
-    current_profile.target_quality = AudioQuality::HIGH;
+    current_profile.target_quality = AudioQuality::QUALITY_HIGH;
     previous_profile = current_profile;
     
     initialized = true;
@@ -105,7 +105,7 @@ AdaptiveQualityProfile AdaptiveAudioQuality::generateProfileForCondition(Network
     
     switch (condition) {
         case NetworkCondition::EXCELLENT:
-            profile.target_quality = AudioQuality::ULTRA;
+            profile.target_quality = AudioQuality::QUALITY_ULTRA;
             profile.sample_rate = 32000;
             profile.bit_depth = 16;
             profile.compression_ratio = 1.0f;
@@ -116,7 +116,7 @@ AdaptiveQualityProfile AdaptiveAudioQuality::generateProfileForCondition(Network
             break;
             
         case NetworkCondition::GOOD:
-            profile.target_quality = AudioQuality::HIGH;
+            profile.target_quality = AudioQuality::QUALITY_HIGH;
             profile.sample_rate = 16000;
             profile.bit_depth = 16;
             profile.compression_ratio = 1.0f;
@@ -127,7 +127,7 @@ AdaptiveQualityProfile AdaptiveAudioQuality::generateProfileForCondition(Network
             break;
             
         case NetworkCondition::FAIR:
-            profile.target_quality = AudioQuality::MEDIUM;
+            profile.target_quality = AudioQuality::QUALITY_MEDIUM;
             profile.sample_rate = 16000;
             profile.bit_depth = 8;
             profile.compression_ratio = 2.0f;
@@ -138,7 +138,7 @@ AdaptiveQualityProfile AdaptiveAudioQuality::generateProfileForCondition(Network
             break;
             
         case NetworkCondition::POOR:
-            profile.target_quality = AudioQuality::LOW;
+            profile.target_quality = AudioQuality::QUALITY_LOW;
             profile.sample_rate = 8000;
             profile.bit_depth = 8;
             profile.compression_ratio = 4.0f;
@@ -149,7 +149,7 @@ AdaptiveQualityProfile AdaptiveAudioQuality::generateProfileForCondition(Network
             break;
             
         case NetworkCondition::CRITICAL:
-            profile.target_quality = AudioQuality::LOW;
+            profile.target_quality = AudioQuality::QUALITY_LOW;
             profile.sample_rate = 8000;
             profile.bit_depth = 8;
             profile.compression_ratio = 8.0f;
@@ -160,7 +160,7 @@ AdaptiveQualityProfile AdaptiveAudioQuality::generateProfileForCondition(Network
             break;
             
         default:
-            profile.target_quality = AudioQuality::HIGH;
+            profile.target_quality = AudioQuality::QUALITY_HIGH;
             break;
     }
     

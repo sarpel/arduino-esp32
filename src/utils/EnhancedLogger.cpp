@@ -1,10 +1,11 @@
 #include "EnhancedLogger.h"
+#include "../core/SystemManager.h"
 #include <cstdarg>
 #include <cstring>
 
 EnhancedLogger::EnhancedLogger()
     : initialized(false), enable_statistics(true), enable_buffering(false),
-      global_min_level(LOG_INFO), max_messages_per_second(100),
+      global_min_level(LogLevel::LOG_INFO), max_messages_per_second(100),
       messages_this_second(0), last_message_time(0) {}
 
 EnhancedLogger::~EnhancedLogger() {
@@ -17,7 +18,7 @@ bool EnhancedLogger::initialize() {
     }
     
     // Initialize serial output by default
-    LogOutputConfig serial_config(LogOutputType::SERIAL, LOG_DEBUG, LOG_CRITICAL);
+    LogOutputConfig serial_config(LogOutputType::SERIAL_OUTPUT, LogLevel::LOG_DEBUG, LogLevel::LOG_CRITICAL);
     addOutput(serial_config);
     
     // Set default formatters
@@ -107,10 +108,10 @@ void EnhancedLogger::setFormatter(LogOutputType type, LogFormatter formatter) {
 }
 
 void EnhancedLogger::setDefaultFormatters() {
-    formatters[LogOutputType::SERIAL] = [this](const LogMessage& msg) { return formatSerial(msg); };
-    formatters[LogOutputType::FILE] = [this](const LogMessage& msg) { return formatFile(msg); };
-    formatters[LogOutputType::NETWORK] = [this](const LogMessage& msg) { return formatNetwork(msg); };
-    formatters[LogOutputType::SYSLOG] = [this](const LogMessage& msg) { return formatSyslog(msg); };
+    formatters[LogOutputType::SERIAL_OUTPUT] = [this](const LogMessage& msg) { return formatSerial(msg); };
+    formatters[LogOutputType::FILE_OUTPUT] = [this](const LogMessage& msg) { return formatFile(msg); };
+    formatters[LogOutputType::NETWORK_OUTPUT] = [this](const LogMessage& msg) { return formatNetwork(msg); };
+    formatters[LogOutputType::SYSLOG_OUTPUT] = [this](const LogMessage& msg) { return formatSyslog(msg); };
 }
 
 void EnhancedLogger::log(LogLevel level, const char* component, const char* file, int line, const char* format, ...) {
@@ -191,19 +192,19 @@ void EnhancedLogger::processMessage(const LogMessage& message) {
 
 void EnhancedLogger::writeToOutput(const LogMessage& message, const LogOutputConfig& output) {
     switch (output.type) {
-        case LogOutputType::SERIAL:
+        case LogOutputType::SERIAL_OUTPUT:
             writeToSerial(message);
             break;
-        case LogOutputType::FILE:
+        case LogOutputType::FILE_OUTPUT:
             writeToFile(message, output);
             break;
-        case LogOutputType::NETWORK:
+        case LogOutputType::NETWORK_OUTPUT:
             writeToNetwork(message, output);
             break;
-        case LogOutputType::SYSLOG:
+        case LogOutputType::SYSLOG_OUTPUT:
             writeToSyslog(message, output);
             break;
-        case LogOutputType::CUSTOM:
+        case LogOutputType::CUSTOM_OUTPUT:
             // Custom output handling would go here
             break;
     }
@@ -389,22 +390,22 @@ bool EnhancedLogger::isRateLimited() const {
 
 const char* EnhancedLogger::getLevelName(LogLevel level) const {
     switch (level) {
-        case LOG_DEBUG: return "DEBUG";
-        case LOG_INFO: return "INFO";
-        case LOG_WARN: return "WARN";
-        case LOG_ERROR: return "ERROR";
-        case LOG_CRITICAL: return "CRITICAL";
+        case LogLevel::LOG_DEBUG: return "DEBUG";
+        case LogLevel::LOG_INFO: return "INFO";
+        case LogLevel::LOG_WARN: return "WARN";
+        case LogLevel::LOG_ERROR: return "ERROR";
+        case LogLevel::LOG_CRITICAL: return "CRITICAL";
         default: return "UNKNOWN";
     }
 }
 
 const char* EnhancedLogger::getOutputName(LogOutputType type) const {
     switch (type) {
-        case LogOutputType::SERIAL: return "SERIAL";
-        case LogOutputType::FILE: return "FILE";
-        case LogOutputType::NETWORK: return "NETWORK";
-        case LogOutputType::SYSLOG: return "SYSLOG";
-        case LogOutputType::CUSTOM: return "CUSTOM";
+        case LogOutputType::SERIAL_OUTPUT: return "SERIAL";
+        case LogOutputType::FILE_OUTPUT: return "FILE";
+        case LogOutputType::NETWORK_OUTPUT: return "NETWORK";
+        case LogOutputType::SYSLOG_OUTPUT: return "SYSLOG";
+        case LogOutputType::CUSTOM_OUTPUT: return "CUSTOM";
         default: return "UNKNOWN";
     }
 }

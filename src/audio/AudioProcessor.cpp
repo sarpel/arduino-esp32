@@ -338,7 +338,7 @@ AudioProcessor::AudioProcessor()
       processing_enabled(true) {
     
     // Set default configuration
-    config.quality = AudioQuality::HIGH;
+    config.quality = AudioQuality::QUALITY_HIGH;
     config.enable_noise_reduction = true;
     config.enable_agc = true;
     config.enable_vad = true;
@@ -487,7 +487,7 @@ void AudioProcessor::setQuality(AudioQuality quality) {
     
     // Adjust parameters based on quality
     switch (quality) {
-        case AudioQuality::LOW:
+        case AudioQuality::QUALITY_LOW:
             config.sample_rate = 8000;
             config.bit_depth = 8;
             config.enable_noise_reduction = false;
@@ -495,7 +495,7 @@ void AudioProcessor::setQuality(AudioQuality quality) {
             config.enable_vad = false;
             break;
             
-        case AudioQuality::MEDIUM:
+        case AudioQuality::QUALITY_MEDIUM:
             config.sample_rate = 16000;
             config.bit_depth = 8;
             config.enable_noise_reduction = true;
@@ -503,7 +503,7 @@ void AudioProcessor::setQuality(AudioQuality quality) {
             config.enable_vad = false;
             break;
             
-        case AudioQuality::HIGH:
+        case AudioQuality::QUALITY_HIGH:
             config.sample_rate = 16000;
             config.bit_depth = 16;
             config.enable_noise_reduction = true;
@@ -511,7 +511,7 @@ void AudioProcessor::setQuality(AudioQuality quality) {
             config.enable_vad = true;
             break;
             
-        case AudioQuality::ULTRA:
+        case AudioQuality::QUALITY_ULTRA:
             config.sample_rate = 32000;
             config.bit_depth = 16;
             config.enable_noise_reduction = true;

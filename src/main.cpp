@@ -3,6 +3,8 @@
 #include "core/EventBus.h"
 #include "core/StateMachine.h"
 #include "audio/AudioProcessor.h"
+#include "network/NetworkManager.h"
+#include "monitoring/HealthMonitor.h"
 #include "config.h"
 #include "esp_task_wdt.h"
 

@@ -60,7 +60,7 @@ struct AdaptiveQualityProfile {
     float noise_gate_threshold;
     
     AdaptiveQualityProfile() : 
-        target_quality(AudioQuality::HIGH), sample_rate(16000),
+        target_quality(AudioQuality::QUALITY_HIGH), sample_rate(16000),
         bit_depth(16), compression_ratio(1.0f),
         enable_noise_reduction(true), enable_agc(true),
         enable_vad(true), noise_gate_threshold(-40.0f) {}

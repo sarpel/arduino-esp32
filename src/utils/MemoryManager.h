@@ -155,7 +155,7 @@ public:
     
     // Utility
     static size_t alignSize(size_t size);
-    static const char* getAllocationType(void* ptr) const;
+    static const char* getAllocationType(void* ptr);
     static bool isPointerValid(void* ptr);
 };
 

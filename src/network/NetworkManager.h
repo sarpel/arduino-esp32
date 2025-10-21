@@ -92,10 +92,10 @@ private:
     bool safe_mode;
     
     // Internal methods
-    bool connectToWiFi();
-    bool connectToServer();
-    void disconnectFromWiFi();
-    void disconnectFromServer();
+    bool connectToWiFiInternal();
+    bool connectToServerInternal();
+    void disconnectFromWiFiInternal();
+    void disconnectFromServerInternal();
     void updateNetworkQuality();
     void calculateStabilityScore();
     bool shouldAutoSwitchNetwork();
@@ -112,7 +112,6 @@ public:
     // WiFi management
     void handleWiFiConnection();
     bool isWiFiConnected() const { return wifi_connected; }
-    int getWiFiRSSI() const;
     String getWiFiSSID() const;
     IPAddress getWiFiIP() const;
     

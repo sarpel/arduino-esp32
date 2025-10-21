@@ -4,15 +4,16 @@
 #include <Arduino.h>
 #include <memory>
 #include <complex>
+#include <vector>
 #include "../core/SystemManager.h"
 #include "../config.h"
 
 // Audio processing quality levels
 enum class AudioQuality {
-    LOW = 0,      // 8kHz, 8-bit, compressed
-    MEDIUM = 1,   // 16kHz, 8-bit, light processing
-    HIGH = 2,     // 16kHz, 16-bit, full processing
-    ULTRA = 3     // 32kHz, 16-bit, maximum quality
+    QUALITY_LOW = 0,      // 8kHz, 8-bit, compressed
+    QUALITY_MEDIUM = 1,   // 16kHz, 8-bit, light processing
+    QUALITY_HIGH = 2,     // 16kHz, 16-bit, full processing
+    QUALITY_ULTRA = 3     // 32kHz, 16-bit, maximum quality
 };
 
 // Audio processing features
@@ -69,7 +70,7 @@ struct AudioConfig {
     uint8_t bit_depth;
     uint8_t channels;
     
-    AudioConfig() : quality(AudioQuality::HIGH), enable_noise_reduction(true),
+    AudioConfig() : quality(AudioQuality::QUALITY_HIGH), enable_noise_reduction(true),
                     enable_agc(true), enable_vad(true), enable_echo_cancellation(false),
                     enable_compression(false), noise_reduction_level(0.7f),
                     agc_target_level(0.3f), agc_max_gain(10.0f), compression_ratio(4.0f),
