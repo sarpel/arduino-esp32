@@ -1,20 +1,163 @@
-*.tmp
-*.bak
+# =====================================================================
+# ESP32 Audio Streamer - Comprehensive .gitignore Configuration
+# =====================================================================
+
+# =====================================================================
+# Editor & IDE Files
+# =====================================================================
+.vscode/
+.idea/
 *.swp
 *.swo
 *~
-*.log
+*.tmp
+*.bak
 .DS_Store
+Thumbs.db
 .clang_complete
 .gcc-flags.json
-Thumbs.db
+*.sublime-workspace
+*.sublime-project
+.classpath
+.project
+.c9/
+*.iml
 
-.serena/
-test/
-.github/
+# =====================================================================
+# PlatformIO Build System
+# =====================================================================
 .pio/
-.vscode/
 .pioenvs/
 .piolibdeps/
-ino/
 build/
+.buildinfo
+.cache/
+*.elf
+*.bin
+*.map
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+
+# =====================================================================
+# Python & Virtual Environments
+# =====================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+env/
+venv/
+ENV/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+
+# =====================================================================
+# Node.js & npm
+# =====================================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# =====================================================================
+# Build Artifacts & Compilation Output
+# =====================================================================
+dist/
+build/
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+*.app
+*.elf
+*.bin
+*.hex
+*.eep
+*.lss
+*.sym
+
+# =====================================================================
+# Documentation & Logs
+# =====================================================================
+*.log
+logs/
+*.swp
+*~
+
+# =====================================================================
+# Test Coverage & Results
+# =====================================================================
+coverage/
+htmlcov/
+.coverage
+.coverage.*
+junit.xml
+test-results/
+
+# =====================================================================
+# OS-Specific Files
+# =====================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.pdb
+
+# =====================================================================
+# Arduino/ESP32 Development
+# =====================================================================
+.arduino15/
+.arduinodata/
+*.bak
+*.backup
+hardware/
+tools/
+
+# =====================================================================
+# Local Development Files
+# =====================================================================
+.env
+.env.local
+.env.*.local
+config.local.h
+local_config.h
+*.local
+debug.log
+temp/
+tmp/
+.DS_Store
+
+# =====================================================================
+# AI/ML and Development Tools
+# =====================================================================
+# Keep these in repo for collaboration:
+# .claude/          - Claude AI configuration
+# .serena/          - Serena MCP memory files
+# .vscode/          - VSCode workspace settings
+# openspec/         - OpenSpec change proposals (tracked)
