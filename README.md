@@ -100,6 +100,7 @@ INMP441 Pin → XIAO Pin
 
 ### Streaming
 
+### Audio Format
 - **Sample Rate**: 16 kHz
 - **Bit Depth**: 16-bit
 - **Channels**: Mono (1-channel)
