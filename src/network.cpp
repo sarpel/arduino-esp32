@@ -265,7 +265,7 @@ bool NetworkManager::connectToServer()
         {
             // TCP_NODELAY: Disable Nagle's algorithm for low-latency streaming
             // Server expects immediate audio chunks without buffering delays
-            // This matches server's receiver.py configuration: conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            // This matches server's configuration in server/receiver.py (see https://github.com/example/audio-server/blob/main/server/receiver.py): conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             int nodelay = 1;
             SET_SOCKOPT(sockfd, IPPROTO_TCP, TCP_NODELAY, nodelay);
 
