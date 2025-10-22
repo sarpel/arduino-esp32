@@ -4,7 +4,7 @@
 // ===== WiFi Configuration =====
 #define WIFI_SSID "Sarpel_2G"
 #define WIFI_PASSWORD "penguen1988"
-#define WIFI_RETRY_DELAY 500 // milliseconds
+#define WIFI_RETRY_DELAY 2000 // milliseconds
 #define WIFI_MAX_RETRIES 20
 #define WIFI_TIMEOUT 30000 // milliseconds
 
@@ -84,16 +84,16 @@
 #define TCP_KEEPALIVE_COUNT 3    // count - number of keepalive probes before disconnect
 
 // ===== Logger Configuration =====
-#define LOGGER_BUFFER_SIZE 256      // bytes - circular buffer for log messages
-#define LOGGER_MAX_LINES_PER_SEC 20 // rate limit to avoid log storms
-#define LOGGER_BURST_MAX 60         // maximum burst of logs allowed
+#define LOGGER_BUFFER_SIZE 64      // bytes - circular buffer for log messages
+#define LOGGER_MAX_LINES_PER_SEC 5 // rate limit to avoid log storms
+#define LOGGER_BURST_MAX 20        // maximum burst of logs allowed
 
 // ===== Watchdog Configuration =====
 #define WATCHDOG_TIMEOUT_SEC 60 // seconds - watchdog timeout (aligned with connection operations)
 
 // ===== Task Priorities =====
-#define TASK_PRIORITY_HIGH 5   // reserved for critical tasks
-#define TASK_PRIORITY_NORMAL 3 // default priority
+#define TASK_PRIORITY_HIGH 7   // reserved for critical tasks
+#define TASK_PRIORITY_NORMAL 4 // default priority
 #define TASK_PRIORITY_LOW 1    // background tasks
 
 // ===== State Machine Timeouts =====
@@ -113,13 +113,13 @@
 
 // ===== Phase 1: Network Resilience Configuration =====
 // Enable/disable reliability features
-#define ENABLE_MULTI_WIFI true                 // Multi-WiFi with automatic failover
-#define ENABLE_NETWORK_QUALITY_MONITORING true // WiFi quality tracking
-#define ENABLE_CONNECTION_POOL true            // Connection pool management
-#define ENABLE_ADAPTIVE_RECONNECTION true      // Adaptive reconnection strategies
+#define ENABLE_MULTI_WIFI false                 // Multi-WiFi with automatic failover
+#define ENABLE_NETWORK_QUALITY_MONITORING false // WiFi quality tracking
+#define ENABLE_CONNECTION_POOL false            // Connection pool management
+#define ENABLE_ADAPTIVE_RECONNECTION true       // Adaptive reconnection strategies
 
 // Network Resilience Parameters
-#define MULTI_WIFI_MAX_NETWORKS 5              // Maximum number of WiFi networks
+#define MULTI_WIFI_MAX_NETWORKS 1              // Maximum number of WiFi networks
 #define NETWORK_QUALITY_CHECK_INTERVAL 10000   // Quality check every 10 seconds
 #define NETWORK_SWITCH_COOLDOWN 30000          // Min interval between network switches (30s)
 #define CONNECTION_POOL_SIZE 3                 // Max connections in pool
