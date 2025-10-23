@@ -336,23 +336,41 @@ void SystemManager::run()
             break;
         }
 
-        // Process audio streaming
+        // Process audio streaming with TCP buffering to eliminate timing artifacts
         {
-            static uint8_t audio_buffer[I2S_BUFFER_SIZE];
+            static uint8_t audio_buffer[I2S_BUFFER_SIZE];   // 4096 bytes - I2S read buffer
+            static uint8_t tcp_send_buffer[TCP_CHUNK_SIZE]; // 19200 bytes - TCP transmission buffer
+            static size_t tcp_buffer_position = 0;          // Current position in TCP buffer
+
             size_t bytes_read = 0;
 
             if (audio_processor->readData(audio_buffer, I2S_BUFFER_SIZE, &bytes_read))
             {
                 context.audio_samples_processed += bytes_read / 2; // 16-bit samples
 
-                if (network_manager->writeData(audio_buffer, bytes_read))
+                // Accumulate I2S data into TCP send buffer
+                size_t space_remaining = TCP_CHUNK_SIZE - tcp_buffer_position;
+                size_t bytes_to_copy = min(bytes_read, space_remaining);
+
+                memcpy(tcp_send_buffer + tcp_buffer_position, audio_buffer, bytes_to_copy);
+                tcp_buffer_position += bytes_to_copy;
+
+                // Send when we have accumulated a full TCP chunk (19200 bytes)
+                // This matches server expectation and reduces network overhead from ~8 to ~1.67 sends/sec
+                if (tcp_buffer_position >= TCP_CHUNK_SIZE)
                 {
-                    context.bytes_sent += bytes_read;
-                }
-                else
-                {
-                    // Network write failed
-                    state_machine->setState(SystemState::CONNECTING_SERVER);
+                    if (network_manager->writeData(tcp_send_buffer, TCP_CHUNK_SIZE))
+                    {
+                        context.bytes_sent += TCP_CHUNK_SIZE;
+                        tcp_buffer_position = 0; // Reset buffer for next chunk
+                    }
+                    else
+                    {
+                        // Network write failed - maintain buffer state for retry
+                        state_machine->setState(SystemState::CONNECTING_SERVER);
+                        // Reset buffer to avoid stale data after reconnection
+                        tcp_buffer_position = 0;
+                    }
                 }
             }
             else

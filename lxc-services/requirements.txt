@@ -17,7 +17,6 @@ librosa==0.10.1
 soundfile==0.12.1
 
 # Web Framework & API
-fastapi-users==12.1.2
 fastapi-users[sqlalchemy]==12.1.2
 httpx==0.25.2
 aiofiles==23.2.1
@@ -73,9 +72,6 @@ zstandard==0.22.0
 
 # System Monitoring
 i3ipc==2.2.1
-
-# WebSocket Support
-websockets==12.0
 
 # Template Engine (if needed for web UI)
 jinja2==3.1.2

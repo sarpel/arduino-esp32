@@ -1,0 +1,92 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install PlatformIO
+      run: pip install -U platformio
+    
+    - name: Build ESP32 firmware
+      run: platformio run --environment esp32
+    
+    - name: Build alternative configurations
+      run: |
+        platformio run --environment esp32-dev
+        platformio run --environment esp32-extended
+      continue-on-error: true
+    
+    - name: Create checksums
+      run: |
+        find .pio/build -name "*.bin" -exec sha256sum {} \; > firmware.sha256
+    
+    - name: Create release
+      uses: actions/create-release@v1
+      id: create_release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+    
+    - name: Upload firmware binaries
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./.pio/build/*/firmware.bin
+        asset_name: firmware.bin
+        asset_content_type: application/octet-stream
+      continue-on-error: true
+    
+    - name: Upload checksums
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./firmware.sha256
+        asset_name: firmware.sha256
+        asset_content_type: text/plain
+
+  documentation:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: pip install sphinx sphinx-rtd-theme
+    
+    - name: Generate documentation
+      run: |
+        cd docs
+        make html
+      continue-on-error: true
+    
+    - name: Upload documentation
+      uses: actions/upload-artifact@v3
+      with:
+        name: documentation
+        path: docs/_build/html/

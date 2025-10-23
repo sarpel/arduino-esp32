@@ -3,12 +3,14 @@
 ## ADDED Requirements
 
 ### Requirement: Track State Entry Time
+
 System SHALL record the entry time for each state and track the duration spent in each state.
 
 #### Scenario: Track WiFi Connection Duration
+
 State duration is tracked accurately across multiple iterations.
 
-```
+```text
 t=0s: Transition to CONNECTING_WIFI
   └─ state_entry_time = millis()
   └─ state_duration = 0
@@ -32,12 +34,14 @@ t=32s: Check state duration
 ---
 
 ### Requirement: Define State Timeouts
+
 Each state SHALL have a defined maximum duration before timeout is triggered.
 
 #### Scenario: Different Timeouts for Different States
+
 System applies different timeout thresholds based on state type.
 
-```
+```text
 CONNECTING_WIFI timeout = 30 seconds (allow retries)
   └─ WiFi can be slow to scan/connect
 
@@ -51,12 +55,14 @@ INITIALIZING timeout = 10 seconds (shouldn't block)
 ---
 
 ### Requirement: Automatic Timeout Transition
+
 When state duration exceeds timeout threshold, system SHALL automatically transition to ERROR state and trigger recovery.
 
 #### Scenario: WiFi Connection Timeout
+
 System stuck in CONNECTING_WIFI for 35 seconds automatically transitions to ERROR.
 
-```
+```text
 System stuck in CONNECTING_WIFI for 35 seconds:
 
 [001235][WARN][StateMachine] State timeout detected!
@@ -74,12 +80,14 @@ System stuck in CONNECTING_WIFI for 35 seconds:
 ---
 
 ### Requirement: State Duration Diagnostics
+
 On state timeout, system SHALL log diagnostic information to aid debugging.
 
 #### Scenario: Timeout Diagnostics
+
 System logs comprehensive diagnostics when state timeout occurs.
 
-```
+```text
 [001235][WARN][StateMachine] State timeout diagnostics:
   ├─ State: CONNECTING_WIFI
   ├─ Duration: 35000ms (timeout: 30000ms)
@@ -94,12 +102,14 @@ System logs comprehensive diagnostics when state timeout occurs.
 ---
 
 ### Requirement: Prevent Timeout False Positives
+
 System SHALL NOT trigger timeout transitions during normal operation where state persistence is expected.
 
 #### Scenario: Normal CONNECTED State
+
 System in CONNECTED state persists indefinitely without timeout.
 
-```
+```text
 System in CONNECTED state:
   ├─ Audio streaming normally
   ├─ No timeout threshold
@@ -108,9 +118,10 @@ System in CONNECTED state:
 ```
 
 #### Scenario: Network Temporarily Slow
+
 Server connection taking normal delay does not trigger timeout.
 
-```
+```text
 Server connection taking 8 seconds (normal):
   └─ CONNECTING_SERVER timeout: 10 seconds
   └─ No timeout triggered
@@ -134,6 +145,7 @@ But if server unreachable for 11 seconds:
 ## Implementation Notes
 
 ### State Duration Tracking
+
 ```cpp
 struct StateData {
     SystemState current_state;
@@ -152,6 +164,7 @@ void updateStateDuration() {
 ```
 
 ### State Timeout Configuration
+
 ```cpp
 const uint32_t STATE_TIMEOUTS[] = {
     [SystemState::INITIALIZING] = 10000,

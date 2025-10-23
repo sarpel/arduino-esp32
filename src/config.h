@@ -131,9 +131,11 @@
 #define RECONNECT_JITTER_PERCENT 20  // Random jitter ±20%
 
 // Network Quality Thresholds
-#define QUALITY_SCORE_THRESHOLD_DEGRADE 50 // Score to trigger degradation
-#define QUALITY_SCORE_THRESHOLD_SWITCH 40  // Score to trigger network switch
-#define RSSI_CRITICAL_THRESHOLD -85        // Critical signal strength
-#define PACKET_LOSS_THRESHOLD 10.0f        // Max packet loss before action (%)
+// Quality score is calculated from RSSI, latency, and packet loss metrics
+// Score ranges 0-100: 70+ = Good, 50-70 = Fair, <50 = Poor
+#define QUALITY_SCORE_THRESHOLD_DEGRADE 50 // Score below which quality degradation is triggered
+#define QUALITY_SCORE_THRESHOLD_SWITCH 40  // Score below which network switch is triggered
+#define RSSI_CRITICAL_THRESHOLD -85        // Critical signal strength (dBm)
+#define PACKET_LOSS_THRESHOLD 10.0f        // Maximum acceptable packet loss before action (%)
 
 #endif // CONFIG_H

@@ -1,0 +1,69 @@
+name: Performance Testing
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  performance-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install PlatformIO
+      run: pip install -U platformio
+    
+    - name: Build performance test firmware
+      run: platformio run -e test_performance
+    
+    - name: Run performance benchmarks
+      run: platformio test -e test_performance -v
+      continue-on-error: true
+    
+    - name: Generate performance report
+      run: python3 scripts/generate_performance_report.py
+      continue-on-error: true
+    
+    - name: Upload performance report
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-report
+        path: reports/performance_*.html
+
+  stress-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install PlatformIO
+      run: pip install -U platformio
+    
+    - name: Build stress test firmware
+      run: platformio run -e test_stress
+    
+    - name: Run stress tests
+      run: platformio test -e test_stress -v
+      continue-on-error: true
+    
+    - name: Generate stress test report
+      run: python3 scripts/generate_stress_report.py
+      continue-on-error: true
+    
+    - name: Upload stress test report
+      uses: actions/upload-artifact@v3
+      with:
+        name: stress-test-report
+        path: reports/stress_*.html

@@ -210,9 +210,10 @@ class NoiseGate(AudioFilter):
                 else:
                     self._envelope = release_coeff * self._envelope
                 
-                # Apply gain reduction
+                # Apply gain reduction with epsilon protection to prevent division by zero
                 if self._envelope < self.threshold:
-                    gain = 1.0 / (1.0 + self.ratio * (self.threshold - self._envelope) / self._envelope)
+                    denom = max(self._envelope, 1e-8)  # Prevent division by zero
+                    gain = 1.0 / (1.0 + self.ratio * (self.threshold - self._envelope) / denom)
                 else:
                     gain = 1.0
                 

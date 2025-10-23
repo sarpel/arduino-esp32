@@ -36,7 +36,11 @@ apt install -y \
 
 # Install Python dependencies
 echo "[3/7] Installing Python dependencies..."
-pip3 install flask>=2.3.0  Flask-HTTPAuth>=4.8.0 Werkzeug>=2.3.0 --break-system-packages
+if [ -f "requirements.txt" ]; then
+    pip3 install -r requirements.txt --break-system-packages
+else
+    echo "WARNING: requirements.txt not found, skipping Python dependencies"
+fi
 
 # Create directories
 echo "[4/7] Creating directories..."
@@ -88,7 +92,5 @@ echo "  - Enable and start both services"
 echo
 echo "Data will be stored in: /data/audio"
 echo "TCP receiver listening on: port 9000"
-echo "Web UI accessible on: http://[container-ip]:8080"
-echo
 echo "Web UI accessible on: http://[container-ip]:8080"
 echo
