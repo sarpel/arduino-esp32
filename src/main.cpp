@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <ArduinoOTA.h>
 #include "config.h"
 #include "logger.h"
 #include "i2s_audio.h"
@@ -11,10 +12,12 @@
 
 // ===== Function Declarations =====
 void gracefulShutdown();
+void setupOTA();
 
 // ===== Global State Management =====
 StateManager systemState;
 static uint8_t audio_buffer[I2S_BUFFER_SIZE];  // Static buffer to avoid heap fragmentation
+static bool ota_initialized = false;  // Track OTA initialization status
 
 // ===== Statistics =====
 struct SystemStats {
@@ -166,6 +169,97 @@ void gracefulShutdown() {
     delay(1000);
 }
 
+// ===== OTA Setup =====
+void setupOTA() {
+    if (ota_initialized) {
+        return;  // Already initialized
+    }
+
+    // Set hostname for network identification
+    ArduinoOTA.setHostname("ESP32-AudioStreamer");
+
+    // Optional: Set password for OTA security (uncomment to enable)
+    // ArduinoOTA.setPassword("your_ota_password");
+
+    // Set port (default is 3232)
+    ArduinoOTA.setPort(3232);
+
+    // Configure OTA event handlers
+    ArduinoOTA.onStart([]() {
+        String type;
+        if (ArduinoOTA.getCommand() == U_FLASH) {
+            type = "sketch";
+        } else {  // U_SPIFFS
+            type = "filesystem";
+        }
+
+        LOG_INFO("========================================");
+        LOG_INFO("OTA Update Started");
+        LOG_INFO("Type: %s", type.c_str());
+        LOG_INFO("========================================");
+
+        // Stop audio streaming during update
+        I2SAudio::cleanup();
+
+        // Disconnect from server to free resources
+        NetworkManager::disconnectFromServer();
+    });
+
+    ArduinoOTA.onEnd([]() {
+        LOG_INFO("========================================");
+        LOG_INFO("OTA Update Complete");
+        LOG_INFO("Rebooting...");
+        LOG_INFO("========================================");
+    });
+
+    ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+        static unsigned int lastPercent = 0;
+        unsigned int percent = (progress / (total / 100));
+
+        // Log progress every 10% to avoid flooding logs
+        if (percent != lastPercent && percent % 10 == 0) {
+            LOG_INFO("OTA Progress: %u%%", percent);
+            lastPercent = percent;
+        }
+    });
+
+    ArduinoOTA.onError([](ota_error_t error) {
+        LOG_ERROR("========================================");
+        LOG_ERROR("OTA Update Failed");
+
+        if (error == OTA_AUTH_ERROR) {
+            LOG_ERROR("Error: Authentication Failed");
+        } else if (error == OTA_BEGIN_ERROR) {
+            LOG_ERROR("Error: Begin Failed");
+        } else if (error == OTA_CONNECT_ERROR) {
+            LOG_ERROR("Error: Connect Failed");
+        } else if (error == OTA_RECEIVE_ERROR) {
+            LOG_ERROR("Error: Receive Failed");
+        } else if (error == OTA_END_ERROR) {
+            LOG_ERROR("Error: End Failed");
+        } else {
+            LOG_ERROR("Error: Unknown (%u)", error);
+        }
+
+        LOG_ERROR("========================================");
+
+        // Try to recover by restarting after a delay
+        delay(5000);
+        ESP.restart();
+    });
+
+    // Start OTA service
+    ArduinoOTA.begin();
+    ota_initialized = true;
+
+    LOG_INFO("========================================");
+    LOG_INFO("OTA Update Service Started");
+    LOG_INFO("Hostname: ESP32-AudioStreamer");
+    LOG_INFO("IP Address: %s", WiFi.localIP().toString().c_str());
+    LOG_INFO("Port: 3232");
+    LOG_INFO("========================================");
+}
+
 // ===== Setup =====
 void setup() {
     // Initialize logger (align with compile-time DEBUG_LEVEL)
@@ -241,6 +335,9 @@ void loop() {
     // Feed watchdog timer
     esp_task_wdt_reset();
 
+    // Handle OTA updates (must be called frequently)
+    ArduinoOTA.handle();
+
     // Process serial commands (non-blocking)
     SerialCommandHandler::processCommands();
 
@@ -268,6 +365,10 @@ void loop() {
         case SystemState::CONNECTING_WIFI:
             if (NetworkManager::isWiFiConnected()) {
                 LOG_INFO("WiFi connected - IP: %s", WiFi.localIP().toString().c_str());
+
+                // Initialize OTA once WiFi is connected
+                setupOTA();
+
                 systemState.setState(SystemState::CONNECTING_SERVER);
             } else if (systemState.hasStateTimedOut(WIFI_TIMEOUT)) {
                 LOG_ERROR("WiFi connection timeout");
