@@ -220,8 +220,8 @@ cd audio-receiver-xiao
 sudo bash setup.sh
 
 # 3. Configure credentials (IMPORTANT - change default password!)
-export WEB_UI_USERNAME="admin"
-export WEB_UI_PASSWORD="your-secure-password-here"
+export WEB_UI_USERNAME="sarpel"
+export WEB_UI_PASSWORD="13524678"
 
 # 4. Deploy services (copies files and starts systemd services)
 sudo bash deploy.sh

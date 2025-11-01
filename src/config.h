@@ -10,7 +10,7 @@
 
 // ===== WiFi Static IP (Optional) =====
 // Uncomment to use static IP instead of DHCP
-// #define USE_STATIC_IP
+#define USE_STATIC_IP
 #define STATIC_IP 192, 168, 1, 27
 #define GATEWAY_IP 192, 168, 1, 1
 #define SUBNET_MASK 255, 255, 255, 0
@@ -48,9 +48,9 @@
 #define I2S_SD_PIN 9
 #define I2S_SCK_PIN 2
 #else
-#define I2S_WS_PIN 15
-#define I2S_SD_PIN 32
-#define I2S_SCK_PIN 14
+#define I2S_WS_PIN 25
+#define I2S_SD_PIN 34
+#define I2S_SCK_PIN 26
 #endif
 
 // ===== I2S Parameters =====

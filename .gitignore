@@ -156,7 +156,8 @@ tmp/
 # AI/ML and Development Tools
 # =====================================================================
 # Keep these in repo for collaboration:
-# .claude/          - Claude AI configuration
-# .serena/          - Serena MCP memory files
-# .vscode/          - VSCode workspace settings
-# openspec/         - OpenSpec change proposals (tracked)
+.claude/          - Claude AI configuration
+.serena/          - Serena MCP memory files
+.vscode/          - VSCode workspace settings
+openspec/         - OpenSpec change proposals (tracked)
+Z.ai.ps1
