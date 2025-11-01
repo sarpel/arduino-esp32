@@ -2,8 +2,8 @@
 #define CONFIG_H
 
 // ===== WiFi Configuration =====
-#define WIFI_SSID "YOUR_WIFI_SSID"
-#define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
+#define WIFI_SSID "Sarpel_2G"
+#define WIFI_PASSWORD "penguen1988"
 #define WIFI_RETRY_DELAY 500 // milliseconds
 #define WIFI_MAX_RETRIES 20
 #define WIFI_TIMEOUT 30000 // milliseconds
@@ -17,7 +17,7 @@
 #define DNS_IP 0, 0, 0, 0
 
 // ===== Server Configuration =====
-#define SERVER_HOST "YOUR_SERVER_IP"
+#define SERVER_HOST "192.168.1.50"
 #define SERVER_PORT 9000
 #define SERVER_RECONNECT_MIN 5000    // milliseconds
 #define SERVER_RECONNECT_MAX 60000   // milliseconds
@@ -48,9 +48,9 @@
 #define I2S_SD_PIN 9
 #define I2S_SCK_PIN 2
 #else
-#define I2S_WS_PIN 15
-#define I2S_SD_PIN 32
-#define I2S_SCK_PIN 14
+#define I2S_WS_PIN 25
+#define I2S_SD_PIN 34
+#define I2S_SCK_PIN 26
 #endif
 
 // ===== I2S Parameters =====
@@ -59,11 +59,15 @@
 #define I2S_BUFFER_SIZE 4096
 #define I2S_DMA_BUF_COUNT 8
 #define I2S_DMA_BUF_LEN 256
+#define AUDIO_GAIN_NUMERATOR 3   // Linear gain numerator (set equal to denominator for unity gain)
+#define AUDIO_GAIN_DENOMINATOR 2 // Linear gain denominator (set to 1 for integer gain factors)
 
 // ===== Reliability Thresholds =====
-#define MEMORY_WARN_THRESHOLD 40000     // bytes
-#define MEMORY_CRITICAL_THRESHOLD 20000 // bytes
-#define RSSI_WEAK_THRESHOLD -80         // dBm
+#define MEMORY_WARN_THRESHOLD 40000      // bytes
+#define MEMORY_CRITICAL_THRESHOLD 20000  // bytes
+#define MEMORY_LEAK_DROP_THRESHOLD 2048  // bytes - change required before counting as leak
+#define MEMORY_LEAK_CONFIRMATION_COUNT 3 // consecutive drops before warning
+#define RSSI_WEAK_THRESHOLD -80          // dBm
 #define MAX_CONSECUTIVE_FAILURES 10
 #define I2S_MAX_READ_RETRIES 3
 

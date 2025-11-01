@@ -8,7 +8,6 @@
 .clang_complete
 .gcc-flags.json
 Thumbs.db
-docs/
 .serena/
 test/
 .github/

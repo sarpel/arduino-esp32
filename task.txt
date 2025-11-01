@@ -1,0 +1,99 @@
+1. There are warnings about possible memory leaks in serial monitor. Check for possible reasons and fix them.
+2. Voice recording in our project is somehow silently, I had to push volume of my speaker to full to hear speeches reliably, If there is a way to increase recording volume, do it. 
+3. I had some electronical components soldered and integrated between inmp441 and esp32 mcu. Currently there are the following components integrated;
+  - 47R resistor from BCLK ---> ESP32
+  - 47R resistor from WS ---> ESP32
+  - 22R resistor between SD ---> ESP32
+  - 100 nF seramic resistor near mic between VCC and GND
+  - L/R ve GND soldered together for Left Channel
+    Are these components have to do anything with low volume levels? Or are they adequate for voice recording job? Is there anything else i should add for better reliability and volume levels.
+4. Add latest state of the project (It have changed a lot) into README.md file. Make it final and one truthful README.md file. 
+5. There are too many development documents in /docs folder. Combine them into one or two files. 
+
+Check these issues and try to fix them. 
+
+
+Terminal output: 
+--- Terminal on COM8 | 115200 8-N-1
+--- Available filters and text transformations: colorize, debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+--- Quit: Ctrl+C | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H
+OOT)
+config[     1] [INFO    ] [Heap:299068] ======================================== (main.cpp:279)
+[     1] [INFO    ] [Heap:299068] ESP32 Audio Streamer Starting Up (main.cpp:280)
+[     1] [INFO    ] [Heap:299068] Board: ESP32-DevKit (main.cpp:281)
+[     1] [INFO    ] [Heap:299068] Version: 2.0 (Reliability-Enhanced) (main.cpp:282)
+[     1] [INFO    ] [Heap:299068] ======================================== (main.cpp:283)
+[     1] [INFO    ] [Heap:299068] === Starting Configuration Validation === (config_validator.h:22)
+[     1] [INFO    ] [Heap:299068] Checking WiFi configuration... (config_validator.h:73)
+[     1] [INFO    ] [Heap:299068]   ✓ WiFi SSID configured (config_validator.h:80)
+[     1] [INFO    ] [Heap:299068]   ✓ WiFi password configured (config_validator.h:88)
+[     1] [INFO    ] [Heap:299068]   ✓ WiFi retry delay: 500 ms (config_validator.h:95)
+[     1] [INFO    ] [Heap:299068]   ✓ WiFi max retries: 20 (config_validator.h:101)
+[     1] [INFO    ] [Heap:299068]   ✓ WiFi timeout: 30000 ms (config_validator.h:107)
+[     1] [INFO    ] [Heap:299068] Checking server configuration... (config_validator.h:120)
+[     1] [INFO    ] [Heap:299068]   ✓ Server HOST configured: 192.168.1.50 (config_validator.h:127)
+[     1] [INFO    ] [Heap:299068]   ✓ Server PORT configured: 9000 (config_validator.h:135)
+[     1] [INFO    ] [Heap:299068]   ✓ Server reconnect min: 5000 ms (config_validator.h:144)
+[     1] [INFO    ] [Heap:299068]   ✓ Server reconnect max: 60000 ms (config_validator.h:154)
+[     1] [INFO    ] [Heap:299068]   ✓ TCP write timeout: 5000 ms (config_validator.h:162)
+[     1] [INFO    ] [Heap:299068] Checking I2S configuration... (config_validator.h:175)
+[     1] [INFO    ] [Heap:299068]   ✓ I2S sample rate: 16000 Hz (config_validator.h:183)
+[     1] [INFO    ] [Heap:299068]   ✓ I2S buffer size: 4096 bytes (config_validator.h:192)
+[     1] [INFO    ] [Heap:299068]   ✓ I2S DMA buffer count: 8 (config_validator.h:201)
+[     1] [INFO    ] [Heap:299068]   ✓ I2S DMA buffer length: 256 (config_validator.h:208)
+[     1] [INFO    ] [Heap:299068]   ✓ I2S max read retries: 3 (config_validator.h:214)
+[     1] [INFO    ] [Heap:299068] Checking timing configuration... (config_validator.h:227)
+[     1] [INFO    ] [Heap:299068]   ✓ Memory check interval: 60000 ms (config_validator.h:234)
+[     1] [INFO    ] [Heap:299068]   ✓ RSSI check interval: 10000 ms (config_validator.h:240)
+[     1] [INFO    ] [Heap:299068]   ✓ Stats print interval: 300000 ms (config_validator.h:246)
+[     1] [INFO    ] [Heap:299068] Checking memory thresholds... (config_validator.h:259)
+[     1] [INFO    ] [Heap:299068]   ✓ Memory critical threshold: 20000 bytes (config_validator.h:265)
+[     1] [INFO    ] [Heap:299068]   ✓ Memory warn threshold: 40000 bytes (config_validator.h:272)
+[     1] [INFO    ] [Heap:299068]   ✓ Memory threshold hierarchy correct (config_validator.h:280)
+[     1] [INFO    ] [Heap:299068]   ✓ RSSI weak threshold: -80 dBm (config_validator.h:288)
+[     1] [INFO    ] [Heap:299068]   ✓ Max consecutive failures: 10 (config_validator.h:294)
+[     1] [INFO    ] [Heap:299068] Checking watchdog configuration... (config_validator.h:307)
+[     1] [INFO    ] [Heap:299068]   ✓ Watchdog timeout: 60 seconds (config_validator.h:315)
+[     1] [INFO    ] [Heap:299068]   ✓ Watchdog timeout compatible with WiFi timeout (config_validator.h:324)
+[     1] [INFO    ] [Heap:299068]   ✓ Watchdog timeout compatible with error recovery delay (config_validator.h:334)
+[     1] [INFO    ] [Heap:299068] ✓ All configuration validations passed (config_validator.h:55)
+[     1] [INFO    ] [Heap:299068] === Configuration Validation Complete === (config_validator.h:60)
+[     1] [INFO    ] [Heap:299068] Initializing I2S audio driver... (i2s_audio.cpp:11)
+[     1] [INFO    ] [Heap:294092] I2S audio driver initialized successfully (i2s_audio.cpp:64)
+[     1] [INFO    ] [Heap:294092] Initializing network... (network.cpp:112)
+[     1] [INFO    ] [Heap:294092] Adaptive Buffer initialized with base size: 4096 bytes (adaptive_buffer.cpp:15)
+[     1] [INFO    ] [Heap:244408] Network initialization started (network.cpp:148)
+[     1] [INFO    ] [Heap:244408] Serial Command Handler initialized (serial_command.cpp:15)
+[     1] [INFO    ] [Heap:244496] Type 'HELP' for available commands (serial_command.cpp:16)
+[     1] [INFO    ] [Heap:244344] State transition: INITIALIZING → CONNECTING_WIFI (main.cpp:140)
+[     1] [INFO    ] [Heap:244112] Setup complete - entering main loop (main.cpp:330)
+[     1] [WARN    ] [Heap:243764] WiFi disconnected - attempting reconnection... (network.cpp:177)
+[  1990][W][WiFiGeneric.cpp:1062] _eventCallback(): Reason: 8 - ASSOC_LEAVE
+[     3] [INFO    ] [Heap:241296] WiFi connected after 4 attempts (network.cpp:159)
+[     3] [INFO    ] [Heap:243692] WiFi connected - IP: 192.168.1.24 (main.cpp:367)
+[  3877][I][ArduinoOTA.cpp:141] begin(): OTA server at: ESP32-AudioStreamer.local:3232
+[     3] [INFO    ] [Heap:235112] ======================================== (main.cpp:255)
+[     3] [INFO    ] [Heap:235112] OTA Update Service Started (main.cpp:256)
+[     3] [INFO    ] [Heap:235112] Hostname: ESP32-AudioStreamer (main.cpp:257)
+[     3] [INFO    ] [Heap:235112] IP Address: 192.168.1.24 (main.cpp:258)
+[     3] [INFO    ] [Heap:235112] Port: 3232 (main.cpp:259)
+[     3] [INFO    ] [Heap:235112] ======================================== (main.cpp:260)
+[     3] [INFO    ] [Heap:235028] State transition: CONNECTING_WIFI → CONNECTING_SERVER (main.cpp:140)
+[     3] [INFO    ] [Heap:235112] TCP state transition: DISCONNECTED → CONNECTING (network.cpp:433)
+[     3] [INFO    ] [Heap:235112] Attempting to connect to server 192.168.1.50:9000 (attempt 1)... (network.cpp:246)
+[     3] [INFO    ] [Heap:234064] Server connection established (network.cpp:253)
+[     3] [INFO    ] [Heap:234064] TCP state transition: CONNECTING → CONNECTED (network.cpp:433)
+[     3] [INFO    ] [Heap:235112] ======================================== (main.cpp:260)
+[     3] [INFO    ] [Heap:235028] State transition: CONNECTING_WIFI → CONNECTING_SERVER (main.cpp:140)
+[     3] [INFO    ] [Heap:235112] TCP state transition: DISCONNECTED → CONNECTING (network.cpp:433)
+[     3] [INFO    ] [Heap:235112] Attempting to connect to server 192.168.1.50:9000 (attempt 1)... (network.cpp:246)
+[     3] [INFO    ] [Heap:234064] Server connection established (network.cpp:253)
+[     3] [INFO    ] [Heap:234064] TCP state transition: CONNECTING → CONNECTED (network.cpp:433)
+[     3] [INFO    ] [Heap:233996] Audio streaming configured: 19200 bytes per chunk (600ms at 16kHz) (network.cpp:290)
+[     3] [INFO    ] [Heap:233948] State transition: CONNECTING_SERVER → CONNECTED (main.cpp:140)
+[     3] [INFO    ] [Heap:233996] Starting audio transmission: first chunk is 4096 bytes (128ms of audio) (network.cpp:358)
+[    61] [WARN    ] [Heap:228772] Memory usage trending downward (potential leak detected) (main.cpp:132)
+[   121] [WARN    ] [Heap:224528] Memory usage trending downward (potential leak detected) (main.cpp:132)
+[   181] [WARN    ] [Heap:228980] Memory usage trending downward (potential leak detected) (main.cpp:132)
+[   241] [WARN    ] [Heap:224752] Memory usage trending downward (potential leak detected) (main.cpp:132)

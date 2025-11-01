@@ -168,6 +168,7 @@ void SerialCommandHandler::handleConfigCommand(const char* args) {
         LOG_INFO("Server: %s:%d", SERVER_HOST, SERVER_PORT);
         LOG_INFO("I2S Sample Rate: %d Hz", I2S_SAMPLE_RATE);
         LOG_INFO("I2S Buffer Size: %d bytes", I2S_BUFFER_SIZE);
+        LOG_INFO("Audio Input Gain: %d/%d (~%.2fx)", AUDIO_GAIN_NUMERATOR, AUDIO_GAIN_DENOMINATOR, (float)AUDIO_GAIN_NUMERATOR / (float)AUDIO_GAIN_DENOMINATOR);
         LOG_INFO("Memory Warning Threshold: %d bytes", MEMORY_WARN_THRESHOLD);
         LOG_INFO("Memory Critical Threshold: %d bytes", MEMORY_CRITICAL_THRESHOLD);
         LOG_INFO("========================================");
