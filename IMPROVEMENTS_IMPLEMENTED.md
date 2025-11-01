@@ -83,7 +83,7 @@ python scripts/report_build_size.py
 ```
 
 **Example Output**:
-```
+```text
 ======================================================================
 ESP32 Audio Streamer - Build Artifact Size Report
 ======================================================================
@@ -253,17 +253,17 @@ Memory Sections:
 
 ### Recommended Future Enhancements
 
-**1. Performance Profiling** (validate claims)
+#### 1. Performance Profiling (validate claims)
 - Measure actual RAM usage on hardware
 - Validate 99.5% uptime target
 - Benchmark audio latency
 
-**2. Additional Documentation**
+#### 2. Additional Documentation
 - User manual for end-users
 - Troubleshooting flowcharts
 - Video tutorials
 
-**3. Code Quality Tools**
+#### 3. Code Quality Tools
 - Static analysis (cppcheck, clang-tidy)
 - Code coverage reports
 - Automated formatting (clang-format)

@@ -124,7 +124,7 @@ INMP441 Pin → XIAO Pin
 
 ---
 
-## � Common Tasks
+## 🛠️ Common Tasks
 
 ### Check System Status
 

@@ -22,7 +22,5 @@ test/
 .github/
 .pio/
 .vscode/
-.pioenvs/
-.piolibdeps/
 ino/
 build/

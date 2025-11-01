@@ -38,8 +38,8 @@ static inline unsigned long apply_jitter(unsigned long base_ms)
 #if SERVER_BACKOFF_JITTER_PCT > 0
     uint32_t r = nb_rand();
 
-    // Calculate jitter range with safety check for negative values
-    int32_t jitter_range = (int32_t)(base_ms * SERVER_BACKOFF_JITTER_PCT / 100);
+    // Calculate jitter range with safety check for negative values and overflow protection
+    int32_t jitter_range = (int32_t)((uint64_t)base_ms * SERVER_BACKOFF_JITTER_PCT / 100);
     if (jitter_range < 0)
     {
         jitter_range = 0; // Safety: prevent negative range
@@ -471,7 +471,7 @@ bool NetworkManager::validateConnection()
 
     if (!state_says_connected && is_actually_connected)
     {
-        LOG_WARN("TCP state mismatch: state!= CONNECTED but client.connected()=true");
+        LOG_WARN("TCP state mismatch: state != CONNECTED but client.connected()=true");
         updateTCPState(TCPConnectionState::CONNECTED);
         return true;
     }

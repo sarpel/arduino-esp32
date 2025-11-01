@@ -132,7 +132,7 @@ private:
             LOG_ERROR("Server PORT (%d) is invalid - must be 1-65535", SERVER_PORT);
             valid = false;
         } else {
-            LOG_INFO("  \u2713 Server PORT configured: %d", SERVER_PORT);
+            LOG_INFO("  ✓ Server PORT configured: %d", SERVER_PORT);
         }
         
         // Validate reconnection timeouts
@@ -312,7 +312,7 @@ private:
         } else if (WATCHDOG_TIMEOUT_SEC < 30) {
             LOG_WARN("WATCHDOG_TIMEOUT_SEC (%u sec) is short - recommend >= 30 seconds", WATCHDOG_TIMEOUT_SEC);
         } else {
-            LOG_INFO("  \u2713 Watchdog timeout: %u seconds", WATCHDOG_TIMEOUT_SEC);
+            LOG_INFO("  ✓ Watchdog timeout: %u seconds", WATCHDOG_TIMEOUT_SEC);
         }
 
         // Verify watchdog timeout doesn't conflict with WiFi timeout
@@ -321,7 +321,7 @@ private:
             LOG_WARN("WATCHDOG_TIMEOUT_SEC (%u) <= WIFI_TIMEOUT (%u sec) - watchdog may reset during WiFi connection",
                      WATCHDOG_TIMEOUT_SEC, wifi_timeout_sec);
         } else {
-            LOG_INFO("  \u2713 Watchdog timeout compatible with WiFi timeout");
+            LOG_INFO("  ✓ Watchdog timeout compatible with WiFi timeout");
         }
 
         // Verify watchdog timeout doesn't conflict with error recovery delay
@@ -331,7 +331,7 @@ private:
                      WATCHDOG_TIMEOUT_SEC, error_delay_sec);
             valid = false;
         } else {
-            LOG_INFO("  \u2713 Watchdog timeout compatible with error recovery delay");
+            LOG_INFO("  ✓ Watchdog timeout compatible with error recovery delay");
         }
 
         // Verify watchdog is long enough for state operations

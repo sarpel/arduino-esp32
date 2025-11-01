@@ -48,8 +48,13 @@ void SerialCommandHandler::processCommands() {
             }
 
             // Parse and execute command
-            char* cmd = strtok(command_buffer, " ");
-            char* args = strtok(nullptr, "");
+            char* cmd = command_buffer;
+            char* args = nullptr;
+            char* space = strchr(command_buffer, ' ');
+            if (space != nullptr) {
+                *space = '\0'; // Null-terminate the command
+                args = space + 1;
+            }
 
             if (cmd != nullptr) {
                 if (strcmp(cmd, "STATUS") == 0) {

@@ -7,7 +7,6 @@ Generates detailed size reports for firmware binaries
 import os
 import sys
 from pathlib import Path
-import json
 from datetime import datetime
 
 # ANSI colors for terminal output

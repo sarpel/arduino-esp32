@@ -2,8 +2,8 @@
 #define CONFIG_H
 
 // ===== WiFi Configuration =====
-#define WIFI_SSID "SSID NAME"
-#define WIFI_PASSWORD "WIFI PASSWORD"
+#define WIFI_SSID "YOUR_WIFI_SSID"
+#define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
 #define WIFI_RETRY_DELAY 500 // milliseconds
 #define WIFI_MAX_RETRIES 20
 #define WIFI_TIMEOUT 30000 // milliseconds
@@ -17,7 +17,7 @@
 #define DNS_IP 0, 0, 0, 0
 
 // ===== Server Configuration =====
-#define SERVER_HOST "192.168.x.x"
+#define SERVER_HOST "YOUR_SERVER_IP"
 #define SERVER_PORT 9000
 #define SERVER_RECONNECT_MIN 5000    // milliseconds
 #define SERVER_RECONNECT_MAX 60000   // milliseconds
