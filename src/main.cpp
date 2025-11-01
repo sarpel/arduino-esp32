@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <ArduinoOTA.h>
+#include <limits>
 #include "config.h"
 #include "logger.h"
 #include "i2s_audio.h"
@@ -19,6 +20,42 @@ StateManager systemState;
 static uint8_t audio_buffer[I2S_BUFFER_SIZE];  // Static buffer to avoid heap fragmentation
 static bool ota_initialized = false;  // Track OTA initialization status
 
+// ===== Audio Processing Helpers =====
+static inline int16_t applyInputGainSample(int16_t sample) {
+#if AUDIO_GAIN_NUMERATOR == AUDIO_GAIN_DENOMINATOR
+    return sample;
+#else
+    int32_t scaled = static_cast<int32_t>(sample) * AUDIO_GAIN_NUMERATOR;
+#if AUDIO_GAIN_DENOMINATOR != 1
+    if (scaled >= 0) {
+        scaled += AUDIO_GAIN_DENOMINATOR / 2;
+    } else {
+        scaled -= AUDIO_GAIN_DENOMINATOR / 2;
+    }
+    scaled /= AUDIO_GAIN_DENOMINATOR;
+#endif
+    if (scaled > std::numeric_limits<int16_t>::max()) {
+        scaled = std::numeric_limits<int16_t>::max();
+    } else if (scaled < std::numeric_limits<int16_t>::min()) {
+        scaled = std::numeric_limits<int16_t>::min();
+    }
+    return static_cast<int16_t>(scaled);
+#endif
+}
+
+static void applyInputGain(uint8_t* buffer, size_t byte_count) {
+#if AUDIO_GAIN_NUMERATOR != AUDIO_GAIN_DENOMINATOR
+    size_t sample_count = byte_count / sizeof(int16_t);
+    int16_t* samples = reinterpret_cast<int16_t*>(buffer);
+    for (size_t i = 0; i < sample_count; ++i) {
+        samples[i] = applyInputGainSample(samples[i]);
+    }
+#else
+    (void)buffer;
+    (void)byte_count;
+#endif
+}
+
 // ===== Statistics =====
 struct SystemStats {
     uint64_t total_bytes_sent;
@@ -31,6 +68,7 @@ struct SystemStats {
     uint32_t last_heap;
     unsigned long last_memory_check;
     int32_t heap_trend;  // +1 = increasing, -1 = decreasing, 0 = stable
+    uint8_t leak_drop_streak;
 
     void init() {
         total_bytes_sent = 0;
@@ -43,6 +81,7 @@ struct SystemStats {
         last_heap = current_heap;
         last_memory_check = millis();
         heap_trend = 0;
+        leak_drop_streak = 0;
     }
 
     void updateMemoryStats() {
@@ -52,13 +91,23 @@ struct SystemStats {
         if (current_heap > peak_heap) peak_heap = current_heap;
         if (current_heap < min_heap) min_heap = current_heap;
 
-        // Detect heap trend (potential memory leak)
-        if (current_heap < last_heap - 1000) {
-            heap_trend = -1;  // Decreasing - potential leak
-        } else if (current_heap > last_heap + 1000) {
-            heap_trend = 1;   // Increasing - memory recovered
+        bool significant_drop = current_heap + MEMORY_LEAK_DROP_THRESHOLD < last_heap;
+        bool significant_recovery = current_heap > last_heap + MEMORY_LEAK_DROP_THRESHOLD;
+
+        if (significant_drop) {
+            if (leak_drop_streak < UINT8_MAX) {
+                leak_drop_streak++;
+            }
+        } else if (significant_recovery) {
+            leak_drop_streak = 0;
+        }
+
+        if (leak_drop_streak >= MEMORY_LEAK_CONFIRMATION_COUNT) {
+            heap_trend = -1;  // Sustained decrease detected
+        } else if (significant_recovery) {
+            heap_trend = 1;   // Memory recovered above threshold
         } else {
-            heap_trend = 0;   // Stable
+            heap_trend = 0;   // Stable / inconclusive
         }
 
         last_heap = current_heap;
@@ -280,6 +329,11 @@ void setup() {
     LOG_INFO("ESP32 Audio Streamer Starting Up");
     LOG_INFO("Board: %s", BOARD_NAME);
     LOG_INFO("Version: 2.0 (Reliability-Enhanced)");
+#if AUDIO_GAIN_NUMERATOR == AUDIO_GAIN_DENOMINATOR
+    LOG_INFO("Input gain: 1.00x (unity)");
+#else
+    LOG_INFO("Input gain: %.2fx (%d/%d)", (float)AUDIO_GAIN_NUMERATOR / (float)AUDIO_GAIN_DENOMINATOR, AUDIO_GAIN_NUMERATOR, AUDIO_GAIN_DENOMINATOR);
+#endif
     LOG_INFO("========================================");
 
     // Initialize statistics
@@ -409,6 +463,7 @@ void loop() {
                 // Read audio data with retry
                 size_t bytes_read = 0;
                 if (I2SAudio::readDataWithRetry(audio_buffer, I2S_BUFFER_SIZE, &bytes_read)) {
+                    applyInputGain(audio_buffer, bytes_read);
                     // Send data to server
                     if (NetworkManager::writeData(audio_buffer, bytes_read)) {
                         stats.total_bytes_sent += bytes_read;
