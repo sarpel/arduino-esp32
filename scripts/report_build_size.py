@@ -22,7 +22,15 @@ class Colors:
     BOLD = '\033[1m'
 
 def format_size(bytes_size):
-    """Format bytes to human-readable size"""
+    """
+    Bayt cinsinden verilen büyüklüğü insan tarafından okunabilir birimle (B, KB, MB, GB) biçimlendirir.
+    
+    Parameters:
+        bytes_size (int | float): Biçimlendirilecek değer, bayt cinsinden.
+    
+    Returns:
+        str: İki ondalık basamak gösterimiyle biçimlendirilmiş büyüklük ve birim (ör. "1.23 KB").
+    """
     for unit in ['B', 'KB', 'MB']:
         if bytes_size < 1024.0:
             return f"{bytes_size:.2f} {unit}"
@@ -30,20 +38,46 @@ def format_size(bytes_size):
     return f"{bytes_size:.2f} GB"
 
 def calculate_percentage(used, total):
-    """Calculate percentage with safety check"""
+    """
+    Belirtilen toplam üzerinden kullanılan miktarın yüzdesini hesaplar.
+    
+    Parameters:
+        used (int | float): Kullanılan miktar.
+        total (int | float): Yüzdelik hesaplamada referans alınan toplam değer.
+    
+    Returns:
+        float: Kullanılan miktarın toplam içindeki oranı yüzde cinsinden; `total` sıfır ise `0.0`.
+    """
     if total == 0:
         return 0.0
     return (used / total) * 100
 
 def get_file_size(filepath):
-    """Get file size safely"""
+    """
+    Belirtilen dosyanın boyutunu bayt cinsinden döndürür.
+    
+    Returns:
+        int: Dosya boyutu bayt cinsinden; dosya bulunamaz veya erişim hatası varsa `0`.
+    """
     try:
         return os.path.getsize(filepath)
     except OSError:
         return 0
 
 def find_build_artifacts(project_root):
-    """Find all build artifacts in .pio directory"""
+    """
+    PlatformIO proje kök dizinindeki .pio/build dizinini tarayarak her ortam için derleme artefaktlarının dosya yollarını toplar.
+    
+    Parameters:
+        project_root (pathlib.Path): PlatformIO proje kök dizinine işaret eden Path nesnesi.
+    
+    Returns:
+        dict: Ortam adıyla anahtarlanmış, her biri şu anahtarları içeren sözlükler: 
+            - 'firmware_bin': firmware.bin dosya yolu (pathlib.Path)
+            - 'firmware_elf': firmware.elf dosya yolu (pathlib.Path)
+            - 'partitions_bin': partitions.bin dosya yolu (pathlib.Path)
+        None: Eğer .pio/build dizini bulunamazsa None döner.
+    """
     artifacts = {}
     pio_dir = project_root / ".pio" / "build"
 
@@ -63,7 +97,15 @@ def find_build_artifacts(project_root):
     return artifacts
 
 def analyze_elf_sections(elf_path):
-    """Analyze ELF file sections using size command"""
+    """
+    ELF dosyasındaki bölümlerin (sections) bayt cinsinden boyutlarını elde eder.
+    
+    Parameters:
+        elf_path (str | pathlib.Path): Analiz edilecek ELF dosyasına işaret eden yol.
+    
+    Returns:
+        dict: Anahtarları bölüm adları (ör. '.text', '.data', '.bss', '.rodata') ve değerleri her bölümün byte cinsinden boyutu olan sözlük. Eğer analiz başarısız olursa veya bölüm bulunmazsa boş sözlük döner.
+    """
     try:
         import subprocess
         result = subprocess.run(
@@ -99,7 +141,15 @@ def analyze_elf_sections(elf_path):
         return {}
 
 def generate_report(project_root):
-    """Generate comprehensive build size report"""
+    """
+    Belirtilen PlatformIO proje kök dizinine göre tüm yapı ortamları için ayrıntılı bir boyut raporu yazdırır.
+    
+    Parameters:
+    	project_root (str | pathlib.Path): PlatformIO proje kök dizininin yolu; fonksiyon .pio/build altında ortam dizinlerini arar.
+    
+    Returns:
+    	int: Çıkış kodu — `0` başarıyla rapor oluşturuldu, `1` .pio/build dizini veya yapı eserleri bulunamadığında.
+    """
     print(f"\n{Colors.HEADER}{Colors.BOLD}=" * 70)
     print(f"ESP32 Audio Streamer - Build Artifact Size Report")
     print(f"=" * 70 + Colors.ENDC)
@@ -170,7 +220,14 @@ def generate_report(project_root):
     return 0
 
 def main():
-    """Main entry point"""
+    """
+    PlatformIO proje kök dizinini tespit eder ve proje için build boyutu raporunu üretir.
+    
+    Çalışma dizininden başlayarak yukarı doğru her üst dizinde `platformio.ini` arar; bir proje kökü bulunamazsa hata mesajı yazdırır ve 1 döner. Proje kökü bulunduğunda `generate_report` çağrılır ve onun döndürdüğü çıkış kodu geri verilir.
+    
+    Returns:
+        int: `generate_report` tarafından döndürülen çıkış kodu; PlatformIO projesi bulunamazsa `1`.
+    """
     # Find project root (directory containing platformio.ini)
     current = Path.cwd()
     project_root = None

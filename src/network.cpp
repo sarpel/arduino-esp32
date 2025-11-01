@@ -226,6 +226,16 @@ void NetworkManager::monitorWiFiQuality()
     }
 }
 
+/**
+ * @brief Sunucuya TCP bağlantısı kurmayı dener.
+ *
+ * Sunucuya bağlanmadan önce Wi‑Fi bağlantısını ve yeniden deneme zamanlayıcısını (exponential backoff) kontrol eder.
+ * Başarılı olduğunda TCP durumunu CONNECTED olarak günceller, yeniden deneme geri dönüşünü sıfırlar, bağlantı sayacı ve son başarılı yazma zamanını günceller
+ * ve alttaki soket için TCP_NODELAY, keepalive ve gönderme zaman aşımı gibi uygun soket seçeneklerini yapılandırır.
+ * Başarısız olduğunda TCP hata işleyicisini çağırır, backoff ile sonraki yeniden deneme süresini planlar ve yeniden deneme zamanlayıcısını başlatır.
+ *
+ * @return `true` bağlantı başarıyla kurulduysa, `false` aksi halde.
+ */
 bool NetworkManager::connectToServer()
 {
     if (!isWiFiConnected())

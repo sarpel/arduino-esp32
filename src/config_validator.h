@@ -6,9 +6,9 @@
 #include <string>
 
 /**
- * Configuration Validator
- * Validates critical configuration values at runtime startup
- * Prevents system from starting with invalid or missing configurations
+ * Tüm kritik yapılandırma parametrelerinin geçerliliğini kontrol eder ve başlatma öncesi ayarların uygun olduğunu garanti eder.
+ *
+ * @returns `true` ise tüm doğrulamalar başarılı, `false` aksi halde.
  */
 class ConfigValidator {
 public:
@@ -111,8 +111,14 @@ private:
     }
 
     /**
-     * Validate server configuration
-     * Checks: HOST and PORT not empty, valid port number
+     * Sunucu yapılandırmasının geçerliliğini denetler.
+     *
+     * Denetimler şunları kapsar: SERVER_HOST boş olmamalı, SERVER_PORT 1–65535 aralığında olmalı;
+     * ayrıca yeniden bağlanma zamanlayıcıları (SERVER_RECONNECT_MIN, SERVER_RECONNECT_MAX) ve
+     * TCP_WRITE_TIMEOUT için mantıklı/önerilen değer aralıkları kontrol edilir; tutarsız veya kritik
+     * hatalar bulunduğunda uygun hata/uyarı mesajları üretilir.
+     *
+     * @returns `true` if required server configuration values are valid, `false` otherwise.
      */
     static bool validateServerConfig() {
         bool valid = true;

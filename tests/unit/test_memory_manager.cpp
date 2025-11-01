@@ -10,6 +10,13 @@
 
 MemoryManager* memManager = nullptr;
 
+/**
+ * @brief Her testten önce global MemoryManager örneğini oluşturur ve başlatır.
+ *
+ * MemoryManager için bir örnek ayırır, ses havuzu için 4 blok ve ağ havuzu için 2 blok olacak şekilde
+ * MemoryConfig yapılandırmasını uygular, istatistik toplamayı etkinleştirir ve yöneticiyi başlatır.
+ * Başlatmanın başarılı olduğunu test doğrulamalarıyla garantiler.
+ */
 void setUp(void) {
     // Initialize before each test
     memManager = new MemoryManager();
@@ -23,6 +30,12 @@ void setUp(void) {
     TEST_ASSERT_TRUE(memManager->initialize(config));
 }
 
+/**
+ * @brief Her testten sonra test ortamını temizler.
+ *
+ * Eğer küresel `memManager` örneği mevcutsa, önce `shutdown()` çağrısı ile kapatır,
+ * ardından belleği serbest bırakır ve `memManager` işaretçisini `nullptr` olarak ayarlar.
+ */
 void tearDown(void) {
     // Cleanup after each test
     if (memManager) {
@@ -64,7 +77,13 @@ void test_network_buffer_allocation() {
     TEST_ASSERT_EQUAL(2, memManager->getNetworkPoolFreeBlocks());
 }
 
-// Test: Pool Exhaustion Handling
+/**
+ * @brief Ses havuzu tükendiğinde bellek yöneticisinin davranışını doğrular.
+ *
+ * Havuzdaki tüm bloklar ayrıldığında pool'un dolu olarak raporlandığını, ek bir
+ * ayrılmanın yığına (heap) geri düştüğünü ve tüm bloklar serbest bırakıldıktan
+ * sonra havuzun tekrar dolu olmadığını doğrular.
+ */
 void test_pool_exhaustion() {
     void* buffers[5];
 
@@ -159,7 +178,13 @@ void test_mixed_allocations() {
     TEST_ASSERT_EQUAL(2, memManager->getNetworkPoolFreeBlocks());
 }
 
-// Test: Memory Leak Detection
+/**
+ * @brief Bellek sızıntısı algılama mekanizmasının doğru çalıştığını doğrular.
+ *
+ * Bu test, bir ses tamponu ayırıp kasıtlı olarak hemen serbest bırakarak sızıntı senaryosu oluşturur,
+ * ardından checkForLeaks çağrısının bir sızıntı raporladığını doğrular ve sonunda testi gerçek sızıntıya
+ * yol açmayacak şekilde ayrılan belleği serbest bırakır.
+ */
 void test_memory_leak_detection() {
     void* leaked_buffer = memManager->allocateAudioBuffer(4096, "leaked");
     TEST_ASSERT_NOT_NULL(leaked_buffer);
@@ -173,6 +198,13 @@ void test_memory_leak_detection() {
     memManager->deallocate(leaked_buffer);
 }
 
+/**
+ * @brief Unity test framework kullanarak tüm MemoryManager birim testlerini çalıştırır.
+ *
+ * @param argc Komut satırından geçirilen argüman sayısı.
+ * @param argv Komut satırından geçirilen argümanların dizisi.
+ * @return int Unity test koşucusunun çıkış kodu.
+ */
 int main(int argc, char **argv) {
     UNITY_BEGIN();
 
