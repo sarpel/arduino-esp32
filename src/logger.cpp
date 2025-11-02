@@ -37,11 +37,52 @@ static inline void logger_refill_tokens()
 void Logger::init(LogLevel level)
 {
     min_level = level;
+
+    // Initialize Serial port (works for both USB CDC and UART modes)
     Serial.begin(115200);
+
+#if ARDUINO_USB_CDC_ON_BOOT
+    // ESP32-S3 USB CDC: Wait for USB connection
+    unsigned long start = millis();
+    while (!Serial && (millis() - start) < 2000) {
+        delay(50);
+        yield(); // Feed watchdog
+    }
+#else
+    // UART mode: Brief delay for stability
     delay(1000);
+#endif
+
     _logger_tokens = LOGGER_BURST_MAX;
     _logger_last_refill_ms = millis();
     _logger_suppressed = 0;
+
+    // Immediate diagnostic output - work regardless of USB connection
+    Serial.println("\n=== LOGGER INITIALIZED ===");
+    Serial.printf("Board: %s\n", BOARD_NAME);
+    Serial.printf("Free Heap: %u bytes\n", ESP.getFreeHeap());
+    Serial.printf("USB CDC: %s\n",
+                  #if ARDUINO_USB_CDC_ON_BOOT
+                  "ENABLED"
+                  #else
+                  "DISABLED"
+                  #endif
+                 );
+    Serial.printf("Logger Level: %d\n", (int)level);
+    Serial.printf("Init Time: %lu ms\n", millis());
+
+    #if ARDUINO_USB_CDC_ON_BOOT
+    if (!Serial) {
+        Serial.println("WARNING: USB CDC not connected - output may not be visible");
+        Serial.println("Check USB cable and serial monitor connection");
+        Serial.println("Board will continue operation regardless of USB CDC status");
+    } else {
+        Serial.println("USB CDC connection established successfully");
+    }
+    #endif
+
+    Serial.println("========================\n");
+    Serial.flush();
 }
 
 void Logger::log(LogLevel level, const char *file, int line, const char *fmt, ...)

@@ -4,7 +4,7 @@
   - 47R resistor from BCLK ---> ESP32
   - 47R resistor from WS ---> ESP32
   - 22R resistor between SD ---> ESP32
-  - 100 nF seramic resistor near mic between VCC and GND
+  - 100 nF ceramic capacitor near mic between VCC and GND
   - L/R ve GND soldered together for Left Channel
     Are these components have to do anything with low volume levels? Or are they adequate for voice recording job? Is there anything else i should add for better reliability and volume levels.
 4. Add latest state of the project (It have changed a lot) into README.md file. Make it final and one truthful README.md file. 

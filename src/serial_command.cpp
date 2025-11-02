@@ -50,13 +50,14 @@ void SerialCommandHandler::processCommands() {
             // Parse and execute command
             char* cmd = command_buffer;
             char* args = nullptr;
-            char* space = strchr(command_buffer, ' ');
-            if (space != nullptr) {
-                *space = '\0'; // Null-terminate the command
-                args = space + 1;
-            }
 
+            // Check for null pointer before dereferencing
             if (cmd != nullptr) {
+                char* space = strchr(command_buffer, ' ');
+                if (space != nullptr) {
+                    *space = '\0'; // Null-terminate the command
+                    args = space + 1;
+                }
                 if (strcmp(cmd, "STATUS") == 0) {
                     handleStatusCommand();
                 } else if (strcmp(cmd, "CONFIG") == 0) {

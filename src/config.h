@@ -10,11 +10,11 @@
 
 // ===== WiFi Static IP (Optional) =====
 // Uncomment to use static IP instead of DHCP
-// #define USE_STATIC_IP
-#define STATIC_IP 0, 0, 0, 0
-#define GATEWAY_IP 0, 0, 0, 0
-#define SUBNET_MASK 0, 0, 0, 0
-#define DNS_IP 0, 0, 0, 0
+#define USE_STATIC_IP
+#define STATIC_IP 192, 168, 1, 26
+#define GATEWAY_IP 192, 168, 1, 1
+#define SUBNET_MASK 255, 255, 255, 0
+#define DNS_IP 8, 8, 8, 8
 
 // ===== Server Configuration =====
 #define SERVER_HOST "192.168.1.50"
@@ -42,10 +42,13 @@
 #define BOARD_NAME "ESP32-DevKit"
 #endif
 
+// NOTE: Board type is auto-detected from PlatformIO build flags
+// Do NOT manually define BOARD_XIAO_ESP32S3 or BOARD_ESP32DEV here
+
 // ===== I2S Hardware Pins =====
 #ifdef BOARD_XIAO_ESP32S3
 #define I2S_WS_PIN 3
-#define I2S_SD_PIN 9
+#define I2S_SD_PIN 1
 #define I2S_SCK_PIN 2
 #else
 #define I2S_WS_PIN 25
@@ -65,8 +68,8 @@
 // ===== Reliability Thresholds =====
 #define MEMORY_WARN_THRESHOLD 40000      // bytes
 #define MEMORY_CRITICAL_THRESHOLD 20000  // bytes
-#define MEMORY_LEAK_DROP_THRESHOLD 2048  // bytes - change required before counting as leak
-#define MEMORY_LEAK_CONFIRMATION_COUNT 3 // consecutive drops before warning
+#define MEMORY_LEAK_DROP_THRESHOLD 4096  // bytes - change required before counting as leak
+#define MEMORY_LEAK_CONFIRMATION_COUNT 5 // consecutive drops before warning
 #define RSSI_WEAK_THRESHOLD -80          // dBm
 #define MAX_CONSECUTIVE_FAILURES 10
 #define I2S_MAX_READ_RETRIES 3
@@ -106,6 +109,6 @@
 // ===== Debug Configuration =====
 // Compile-time debug level (0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG, 5=VERBOSE)
 // Set to 0 for production (minimal logging), 3+ for development
-#define DEBUG_LEVEL 3
+#define DEBUG_LEVEL 4
 
 #endif // CONFIG_H

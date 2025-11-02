@@ -17,37 +17,46 @@ void setupOTA();
 
 // ===== Global State Management =====
 StateManager systemState;
-static uint8_t audio_buffer[I2S_BUFFER_SIZE];  // Static buffer to avoid heap fragmentation
-static bool ota_initialized = false;  // Track OTA initialization status
+static uint8_t audio_buffer[I2S_BUFFER_SIZE]; // Static buffer to avoid heap fragmentation
+static bool ota_initialized = false;          // Track OTA initialization status
 
 // ===== Audio Processing Helpers =====
-static inline int16_t applyInputGainSample(int16_t sample) {
+static inline int16_t applyInputGainSample(int16_t sample)
+{
 #if AUDIO_GAIN_NUMERATOR == AUDIO_GAIN_DENOMINATOR
     return sample;
 #else
     int32_t scaled = static_cast<int32_t>(sample) * AUDIO_GAIN_NUMERATOR;
 #if AUDIO_GAIN_DENOMINATOR != 1
-    if (scaled >= 0) {
+    if (scaled >= 0)
+    {
         scaled += AUDIO_GAIN_DENOMINATOR / 2;
-    } else {
+    }
+    else
+    {
         scaled -= AUDIO_GAIN_DENOMINATOR / 2;
     }
     scaled /= AUDIO_GAIN_DENOMINATOR;
 #endif
-    if (scaled > std::numeric_limits<int16_t>::max()) {
+    if (scaled > std::numeric_limits<int16_t>::max())
+    {
         scaled = std::numeric_limits<int16_t>::max();
-    } else if (scaled < std::numeric_limits<int16_t>::min()) {
+    }
+    else if (scaled < std::numeric_limits<int16_t>::min())
+    {
         scaled = std::numeric_limits<int16_t>::min();
     }
     return static_cast<int16_t>(scaled);
 #endif
 }
 
-static void applyInputGain(uint8_t* buffer, size_t byte_count) {
+static void applyInputGain(uint8_t *buffer, size_t byte_count)
+{
 #if AUDIO_GAIN_NUMERATOR != AUDIO_GAIN_DENOMINATOR
     size_t sample_count = byte_count / sizeof(int16_t);
-    int16_t* samples = reinterpret_cast<int16_t*>(buffer);
-    for (size_t i = 0; i < sample_count; ++i) {
+    int16_t *samples = reinterpret_cast<int16_t *>(buffer);
+    for (size_t i = 0; i < sample_count; ++i)
+    {
         samples[i] = applyInputGainSample(samples[i]);
     }
 #else
@@ -57,7 +66,8 @@ static void applyInputGain(uint8_t* buffer, size_t byte_count) {
 }
 
 // ===== Statistics =====
-struct SystemStats {
+struct SystemStats
+{
     uint64_t total_bytes_sent;
     uint32_t i2s_errors;
     unsigned long uptime_start;
@@ -67,10 +77,11 @@ struct SystemStats {
     uint32_t min_heap;
     uint32_t last_heap;
     unsigned long last_memory_check;
-    int32_t heap_trend;  // +1 = increasing, -1 = decreasing, 0 = stable
-    uint8_t leak_drop_streak;
+    int32_t heap_trend;       // +1 = increasing, -1 = decreasing, 0 = stable
+    uint8_t leak_drop_streak; // Consecutive checks showing memory drops
 
-    void init() {
+    void init()
+    {
         total_bytes_sent = 0;
         i2s_errors = 0;
         uptime_start = millis();
@@ -84,38 +95,52 @@ struct SystemStats {
         leak_drop_streak = 0;
     }
 
-    void updateMemoryStats() {
+    void updateMemoryStats()
+    {
         uint32_t current_heap = ESP.getFreeHeap();
 
         // Update peak and minimum
-        if (current_heap > peak_heap) peak_heap = current_heap;
-        if (current_heap < min_heap) min_heap = current_heap;
+        if (current_heap > peak_heap)
+            peak_heap = current_heap;
+        if (current_heap < min_heap)
+            min_heap = current_heap;
 
+        // Require sustained drops to avoid transient allocation noise (streak-based leak detection)
         bool significant_drop = current_heap + MEMORY_LEAK_DROP_THRESHOLD < last_heap;
         bool significant_recovery = current_heap > last_heap + MEMORY_LEAK_DROP_THRESHOLD;
 
-        if (significant_drop) {
-            if (leak_drop_streak < UINT8_MAX) {
+        if (significant_drop)
+        {
+            if (leak_drop_streak < UINT8_MAX)
+            {
                 leak_drop_streak++;
             }
-        } else if (significant_recovery) {
+        }
+        else if (significant_recovery)
+        {
             leak_drop_streak = 0;
         }
 
-        if (leak_drop_streak >= MEMORY_LEAK_CONFIRMATION_COUNT) {
-            heap_trend = -1;  // Sustained decrease detected
-        } else if (significant_recovery) {
-            heap_trend = 1;   // Memory recovered above threshold
-        } else {
-            heap_trend = 0;   // Stable / inconclusive
+        if (leak_drop_streak >= MEMORY_LEAK_CONFIRMATION_COUNT)
+        {
+            heap_trend = -1; // Sustained decrease detected
+        }
+        else if (significant_recovery)
+        {
+            heap_trend = 1; // Memory recovered above threshold
+        }
+        else
+        {
+            heap_trend = 0; // Stable / inconclusive
         }
 
         last_heap = current_heap;
         last_memory_check = millis();
     }
 
-    void printStats() {
-        updateMemoryStats();  // Update memory trend before printing
+    void printStats()
+    {
+        updateMemoryStats(); // Update memory trend before printing
 
         unsigned long uptime_sec = (millis() - uptime_start) / 1000;
         uint32_t current_heap = ESP.getFreeHeap();
@@ -139,11 +164,16 @@ struct SystemStats {
         LOG_INFO("Heap range: %u bytes", peak_heap - min_heap);
 
         // Detect potential memory leak
-        if (heap_trend == -1) {
+        if (heap_trend == -1)
+        {
             LOG_WARN("Memory trend: DECREASING (potential leak)");
-        } else if (heap_trend == 1) {
+        }
+        else if (heap_trend == 1)
+        {
             LOG_INFO("Memory trend: INCREASING (recovered)");
-        } else {
+        }
+        else
+        {
             LOG_INFO("Memory trend: STABLE");
         }
 
@@ -156,41 +186,50 @@ NonBlockingTimer memoryCheckTimer(MEMORY_CHECK_INTERVAL, true);
 NonBlockingTimer statsPrintTimer(STATS_PRINT_INTERVAL, true);
 
 // ===== Memory Monitoring =====
-void checkMemoryHealth() {
-    if (!memoryCheckTimer.check()) return;
+void checkMemoryHealth()
+{
+    if (!memoryCheckTimer.check())
+        return;
 
     // Update memory tracking statistics
     stats.updateMemoryStats();
 
     uint32_t free_heap = ESP.getFreeHeap();
 
-    if (free_heap < MEMORY_CRITICAL_THRESHOLD) {
+    if (free_heap < MEMORY_CRITICAL_THRESHOLD)
+    {
         LOG_CRITICAL("Critical low memory: %u bytes - system may crash", free_heap);
         // Consider restarting if critically low
-        if (free_heap < MEMORY_CRITICAL_THRESHOLD / 2) {
+        if (free_heap < MEMORY_CRITICAL_THRESHOLD / 2)
+        {
             LOG_CRITICAL("Memory critically low - initiating graceful restart");
             gracefulShutdown();
             ESP.restart();
         }
-    } else if (free_heap < MEMORY_WARN_THRESHOLD) {
+    }
+    else if (free_heap < MEMORY_WARN_THRESHOLD)
+    {
         LOG_WARN("Memory low: %u bytes", free_heap);
     }
 
     // Warn about potential memory leak
-    if (stats.heap_trend == -1) {
+    if (stats.heap_trend == -1)
+    {
         LOG_WARN("Memory usage trending downward (potential leak detected)");
     }
 }
 
 // ===== State Change Callback =====
-void onStateChange(SystemState from, SystemState to) {
+void onStateChange(SystemState from, SystemState to)
+{
     LOG_INFO("State transition: %s → %s",
              systemState.stateToString(from).c_str(),
              systemState.stateToString(to).c_str());
 }
 
 // ===== Graceful Shutdown =====
-void gracefulShutdown() {
+void gracefulShutdown()
+{
     LOG_INFO("========================================");
     LOG_INFO("Initiating graceful shutdown...");
     LOG_INFO("========================================");
@@ -199,7 +238,8 @@ void gracefulShutdown() {
     stats.printStats();
 
     // Close TCP connection
-    if (NetworkManager::isServerConnected()) {
+    if (NetworkManager::isServerConnected())
+    {
         LOG_INFO("Closing server connection...");
         NetworkManager::disconnectFromServer();
         delay(GRACEFUL_SHUTDOWN_DELAY);
@@ -219,9 +259,11 @@ void gracefulShutdown() {
 }
 
 // ===== OTA Setup =====
-void setupOTA() {
-    if (ota_initialized) {
-        return;  // Already initialized
+void setupOTA()
+{
+    if (ota_initialized)
+    {
+        return; // Already initialized
     }
 
     // Set hostname for network identification
@@ -234,7 +276,8 @@ void setupOTA() {
     ArduinoOTA.setPort(3232);
 
     // Configure OTA event handlers
-    ArduinoOTA.onStart([]() {
+    ArduinoOTA.onStart([]()
+                       {
         String type;
         if (ArduinoOTA.getCommand() == U_FLASH) {
             type = "sketch";
@@ -251,17 +294,17 @@ void setupOTA() {
         I2SAudio::cleanup();
 
         // Disconnect from server to free resources
-        NetworkManager::disconnectFromServer();
-    });
+        NetworkManager::disconnectFromServer(); });
 
-    ArduinoOTA.onEnd([]() {
+    ArduinoOTA.onEnd([]()
+                     {
         LOG_INFO("========================================");
         LOG_INFO("OTA Update Complete");
         LOG_INFO("Rebooting...");
-        LOG_INFO("========================================");
-    });
+        LOG_INFO("========================================"); });
 
-    ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    ArduinoOTA.onProgress([](unsigned int progress, unsigned int total)
+                          {
         static unsigned int lastPercent = 0;
         unsigned int percent = (progress / (total / 100));
 
@@ -269,10 +312,10 @@ void setupOTA() {
         if (percent != lastPercent && percent % 10 == 0) {
             LOG_INFO("OTA Progress: %u%%", percent);
             lastPercent = percent;
-        }
-    });
+        } });
 
-    ArduinoOTA.onError([](ota_error_t error) {
+    ArduinoOTA.onError([](ota_error_t error)
+                       {
         LOG_ERROR("========================================");
         LOG_ERROR("OTA Update Failed");
 
@@ -294,8 +337,7 @@ void setupOTA() {
 
         // Try to recover by restarting after a delay
         delay(5000);
-        ESP.restart();
-    });
+        ESP.restart(); });
 
     // Start OTA service
     ArduinoOTA.begin();
@@ -310,20 +352,29 @@ void setupOTA() {
 }
 
 // ===== Setup =====
-void setup() {
+void setup()
+{
+    // Initialize Serial for debugging
+    Serial.begin(115200);
+    delay(2000);
+    Serial.println("=== ESP32-S3 BOOT START ===");
+    Serial.println("Serial initialized");
+    Serial.flush();
+
     // Initialize logger (align with compile-time DEBUG_LEVEL)
+    // Logger will handle Serial initialization for ESP32-S3
     LogLevel bootLogLevel = LOG_INFO;
-    #if DEBUG_LEVEL >= 4
-        bootLogLevel = LOG_DEBUG;
-    #elif DEBUG_LEVEL == 3
-        bootLogLevel = LOG_INFO;
-    #elif DEBUG_LEVEL == 2
-        bootLogLevel = LOG_WARN;
-    #elif DEBUG_LEVEL == 1
-        bootLogLevel = LOG_ERROR;
-    #else
-        bootLogLevel = LOG_CRITICAL;
-    #endif
+#if DEBUG_LEVEL >= 4
+    bootLogLevel = LOG_DEBUG;
+#elif DEBUG_LEVEL == 3
+    bootLogLevel = LOG_INFO;
+#elif DEBUG_LEVEL == 2
+    bootLogLevel = LOG_WARN;
+#elif DEBUG_LEVEL == 1
+    bootLogLevel = LOG_ERROR;
+#else
+    bootLogLevel = LOG_CRITICAL;
+#endif
     Logger::init(bootLogLevel);
     LOG_INFO("========================================");
     LOG_INFO("ESP32 Audio Streamer Starting Up");
@@ -340,11 +391,13 @@ void setup() {
     stats.init();
 
     // Validate configuration before proceeding
-    if (!ConfigValidator::validateAll()) {
+    if (!ConfigValidator::validateAll())
+    {
         LOG_CRITICAL("Configuration validation failed - cannot start system");
         LOG_CRITICAL("Please check config.h and fix the issues listed above");
         systemState.setState(SystemState::ERROR);
-        while (1) {
+        while (1)
+        {
             delay(ERROR_RECOVERY_DELAY);
             LOG_CRITICAL("Waiting for configuration fix...");
         }
@@ -355,10 +408,12 @@ void setup() {
     systemState.setState(SystemState::INITIALIZING);
 
     // Initialize I2S
-    if (!I2SAudio::initialize()) {
+    if (!I2SAudio::initialize())
+    {
         LOG_CRITICAL("I2S initialization failed - cannot continue");
         systemState.setState(SystemState::ERROR);
-        while (1) {
+        while (1)
+        {
             delay(1000);
         }
     }
@@ -385,7 +440,8 @@ void setup() {
 }
 
 // ===== Main Loop with State Machine =====
-void loop() {
+void loop()
+{
     // Feed watchdog timer
     esp_task_wdt_reset();
 
@@ -405,105 +461,120 @@ void loop() {
     checkMemoryHealth();
 
     // Print statistics periodically
-    if (statsPrintTimer.check()) {
+    if (statsPrintTimer.check())
+    {
         stats.printStats();
     }
 
     // State machine
-    switch (systemState.getState()) {
-        case SystemState::INITIALIZING:
-            // Should not reach here after setup
+    switch (systemState.getState())
+    {
+    case SystemState::INITIALIZING:
+        // Should not reach here after setup
+        systemState.setState(SystemState::CONNECTING_WIFI);
+        break;
+
+    case SystemState::CONNECTING_WIFI:
+        if (NetworkManager::isWiFiConnected())
+        {
+            LOG_INFO("WiFi connected - IP: %s", WiFi.localIP().toString().c_str());
+
+            // Initialize OTA once WiFi is connected
+            setupOTA();
+
+            systemState.setState(SystemState::CONNECTING_SERVER);
+        }
+        else if (systemState.hasStateTimedOut(WIFI_TIMEOUT))
+        {
+            LOG_ERROR("WiFi connection timeout");
+            systemState.setState(SystemState::ERROR);
+        }
+        break;
+
+    case SystemState::CONNECTING_SERVER:
+        if (!NetworkManager::isWiFiConnected())
+        {
+            LOG_WARN("WiFi lost while connecting to server");
             systemState.setState(SystemState::CONNECTING_WIFI);
             break;
+        }
 
-        case SystemState::CONNECTING_WIFI:
-            if (NetworkManager::isWiFiConnected()) {
-                LOG_INFO("WiFi connected - IP: %s", WiFi.localIP().toString().c_str());
+        if (NetworkManager::connectToServer())
+        {
+            systemState.setState(SystemState::CONNECTED);
+        }
+        // Timeout handled by exponential backoff in NetworkManager
+        break;
 
-                // Initialize OTA once WiFi is connected
-                setupOTA();
-
-                systemState.setState(SystemState::CONNECTING_SERVER);
-            } else if (systemState.hasStateTimedOut(WIFI_TIMEOUT)) {
-                LOG_ERROR("WiFi connection timeout");
-                systemState.setState(SystemState::ERROR);
-            }
-            break;
-
-        case SystemState::CONNECTING_SERVER:
-            if (!NetworkManager::isWiFiConnected()) {
-                LOG_WARN("WiFi lost while connecting to server");
-                systemState.setState(SystemState::CONNECTING_WIFI);
-                break;
-            }
-
-            if (NetworkManager::connectToServer()) {
-                systemState.setState(SystemState::CONNECTED);
-            }
-            // Timeout handled by exponential backoff in NetworkManager
-            break;
-
-        case SystemState::CONNECTED:
-            {
-                // Verify WiFi is still connected
-                if (!NetworkManager::isWiFiConnected()) {
-                    LOG_WARN("WiFi lost during streaming");
-                    NetworkManager::disconnectFromServer();
-                    systemState.setState(SystemState::CONNECTING_WIFI);
-                    break;
-                }
-
-                // Verify server connection
-                if (!NetworkManager::isServerConnected()) {
-                    LOG_WARN("Server connection lost");
-                    systemState.setState(SystemState::CONNECTING_SERVER);
-                    break;
-                }
-
-                // Read audio data with retry
-                size_t bytes_read = 0;
-                if (I2SAudio::readDataWithRetry(audio_buffer, I2S_BUFFER_SIZE, &bytes_read)) {
-                    applyInputGain(audio_buffer, bytes_read);
-                    // Send data to server
-                    if (NetworkManager::writeData(audio_buffer, bytes_read)) {
-                        stats.total_bytes_sent += bytes_read;
-                    } else {
-                        // Write failed - let NetworkManager handle reconnection
-                        LOG_WARN("Data transmission failed");
-                        systemState.setState(SystemState::CONNECTING_SERVER);
-                    }
-                } else {
-                    // I2S read failed even after retries
-                    stats.i2s_errors++;
-                    LOG_ERROR("I2S read failed after retries");
-
-                    // If too many consecutive errors, may need to reinitialize
-                    // (handled internally by I2SAudio)
-                }
-
-                // Small delay to allow background tasks
-                delay(TASK_YIELD_DELAY);
-            }
-            break;
-
-        case SystemState::DISCONNECTED:
-            // Attempt to reconnect
-            systemState.setState(SystemState::CONNECTING_SERVER);
-            break;
-
-        case SystemState::ERROR:
-            LOG_ERROR("System in error state - attempting recovery...");
-            delay(ERROR_RECOVERY_DELAY);
-
-            // Try to recover
+    case SystemState::CONNECTED:
+    {
+        // Verify WiFi is still connected
+        if (!NetworkManager::isWiFiConnected())
+        {
+            LOG_WARN("WiFi lost during streaming");
             NetworkManager::disconnectFromServer();
             systemState.setState(SystemState::CONNECTING_WIFI);
             break;
+        }
 
-        case SystemState::MAINTENANCE:
-            // Reserved for future use (e.g., firmware updates)
-            LOG_INFO("System in maintenance mode");
-            delay(ERROR_RECOVERY_DELAY);
+        // Verify server connection
+        if (!NetworkManager::isServerConnected())
+        {
+            LOG_WARN("Server connection lost");
+            systemState.setState(SystemState::CONNECTING_SERVER);
             break;
+        }
+
+        // Read audio data with retry
+        size_t bytes_read = 0;
+        if (I2SAudio::readDataWithRetry(audio_buffer, I2S_BUFFER_SIZE, &bytes_read))
+        {
+            applyInputGain(audio_buffer, bytes_read);
+            // Send data to server
+            if (NetworkManager::writeData(audio_buffer, bytes_read))
+            {
+                stats.total_bytes_sent += bytes_read;
+            }
+            else
+            {
+                // Write failed - let NetworkManager handle reconnection
+                LOG_WARN("Data transmission failed");
+                systemState.setState(SystemState::CONNECTING_SERVER);
+            }
+        }
+        else
+        {
+            // I2S read failed even after retries
+            stats.i2s_errors++;
+            LOG_ERROR("I2S read failed after retries");
+
+            // If too many consecutive errors, may need to reinitialize
+            // (handled internally by I2SAudio)
+        }
+
+        // Small delay to allow background tasks
+        delay(TASK_YIELD_DELAY);
+    }
+    break;
+
+    case SystemState::DISCONNECTED:
+        // Attempt to reconnect
+        systemState.setState(SystemState::CONNECTING_SERVER);
+        break;
+
+    case SystemState::ERROR:
+        LOG_ERROR("System in error state - attempting recovery...");
+        delay(ERROR_RECOVERY_DELAY);
+
+        // Try to recover
+        NetworkManager::disconnectFromServer();
+        systemState.setState(SystemState::CONNECTING_WIFI);
+        break;
+
+    case SystemState::MAINTENANCE:
+        // Reserved for future use (e.g., firmware updates)
+        LOG_INFO("System in maintenance mode");
+        delay(ERROR_RECOVERY_DELAY);
+        break;
     }
 }

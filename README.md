@@ -75,12 +75,25 @@ INMP441 Pin → XIAO Pin
 
 4. **Build & Upload**
 
+   **For ESP32-DevKit:**
    ```bash
    # Build firmware
    pio run -e esp32dev
 
    # Upload to ESP32 (adjust COM port)
    pio run -e esp32dev --target upload --upload-port COM8
+
+   # Monitor serial output
+   pio device monitor --port COM8 --baud 115200
+   ```
+
+   **For Seeed XIAO ESP32-S3:**
+   ```bash
+   # Build firmware
+   pio run -e seeed_xiao_esp32s3
+
+   # Upload to XIAO (adjust COM port)
+   pio run -e seeed_xiao_esp32s3 --target upload --upload-port COM8
 
    # Monitor serial output
    pio device monitor --port COM8 --baud 115200
@@ -230,9 +243,16 @@ pio device list --mdns
 
 ### Upload via OTA
 
+**For ESP32-DevKit:**
 ```bash
 # Upload new firmware over WiFi
 pio run -e esp32dev-ota --target upload
+```
+
+**For Seeed XIAO ESP32-S3:**
+```bash
+# Upload new firmware over WiFi
+pio run -e seeed_xiao_esp32s3-ota --target upload
 ```
 
 ### Security (Optional)
@@ -351,8 +371,8 @@ ArduinoOTA.setPassword("YourSecurePassword");
 ## 🤝 Contributing
 
 1. Follow coding standards in **AGENTS.md**
-2. Test builds before committing: `pio run -e esp32dev`
-3. Run tests: `pio test -e esp32dev`
+2. Test builds before committing: `pio run -e esp32dev` or `pio run -e seeed_xiao_esp32s3`
+3. Run tests: `pio test -e esp32dev` or `pio test -e seeed_xiao_esp32s3`
 4. Document changes in commit messages
 
 ---
