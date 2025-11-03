@@ -5,79 +5,77 @@
 #include <functional>
 
 enum class SystemState {
-    INITIALIZING,
-    CONNECTING_WIFI,
-    CONNECTING_SERVER,
-    CONNECTED,
-    DISCONNECTED,
-    ERROR,
-    MAINTENANCE
+  INITIALIZING,
+  CONNECTING_WIFI,
+  CONNECTING_SERVER,
+  CONNECTED,
+  DISCONNECTED,
+  ERROR,
+  MAINTENANCE
 };
 
 class StateManager {
 private:
-    SystemState currentState;
-    SystemState previousState;
-    unsigned long stateEnterTime;
-    std::function<void(SystemState, SystemState)> stateChangeCallback;
+  SystemState currentState;
+  SystemState previousState;
+  unsigned long stateEnterTime;
+  std::function<void(SystemState, SystemState)> stateChangeCallback;
 
 public:
-    StateManager() : currentState(SystemState::INITIALIZING), 
-                   previousState(SystemState::INITIALIZING),
-                   stateEnterTime(millis()) {}
+  StateManager()
+      : currentState(SystemState::INITIALIZING),
+        previousState(SystemState::INITIALIZING), stateEnterTime(millis()) {}
 
-    void setState(SystemState newState) {
-        if (newState != currentState) {
-            previousState = currentState;
-            currentState = newState;
-            stateEnterTime = millis();
-            
-            if (stateChangeCallback) {
-                stateChangeCallback(previousState, currentState);
-            }
-        }
-    }
+  void setState(SystemState newState) {
+    if (newState != currentState) {
+      previousState = currentState;
+      currentState = newState;
+      stateEnterTime = millis();
 
-    SystemState getState() const {
-        return currentState;
+      if (stateChangeCallback) {
+        stateChangeCallback(previousState, currentState);
+      }
     }
+  }
 
-    SystemState getPreviousState() const {
-        return previousState;
-    }
+  SystemState getState() const { return currentState; }
 
-    unsigned long getStateDuration() const {
-        return millis() - stateEnterTime;
-    }
+  SystemState getPreviousState() const { return previousState; }
 
-    bool isInState(SystemState state) const {
-        return currentState == state;
-    }
+  unsigned long getStateDuration() const { return millis() - stateEnterTime; }
 
-    bool hasStateTimedOut(unsigned long timeoutMs) const {
-        return getStateDuration() >= timeoutMs;
-    }
+  bool isInState(SystemState state) const { return currentState == state; }
 
-    void onStateChange(std::function<void(SystemState, SystemState)> callback) {
-        stateChangeCallback = callback;
-    }
+  bool hasStateTimedOut(unsigned long timeoutMs) const {
+    return getStateDuration() >= timeoutMs;
+  }
 
-    String stateToString(SystemState state) const {
-        switch (state) {
-            case SystemState::INITIALIZING: return "INITIALIZING";
-            case SystemState::CONNECTING_WIFI: return "CONNECTING_WIFI";
-            case SystemState::CONNECTING_SERVER: return "CONNECTING_SERVER";
-            case SystemState::CONNECTED: return "CONNECTED";
-            case SystemState::DISCONNECTED: return "DISCONNECTED";
-            case SystemState::ERROR: return "ERROR";
-            case SystemState::MAINTENANCE: return "MAINTENANCE";
-            default: return "UNKNOWN";
-        }
-    }
+  void onStateChange(std::function<void(SystemState, SystemState)> callback) {
+    stateChangeCallback = callback;
+  }
 
-    String getCurrentStateString() const {
-        return stateToString(currentState);
+  String stateToString(SystemState state) const {
+    switch (state) {
+    case SystemState::INITIALIZING:
+      return "INITIALIZING";
+    case SystemState::CONNECTING_WIFI:
+      return "CONNECTING_WIFI";
+    case SystemState::CONNECTING_SERVER:
+      return "CONNECTING_SERVER";
+    case SystemState::CONNECTED:
+      return "CONNECTED";
+    case SystemState::DISCONNECTED:
+      return "DISCONNECTED";
+    case SystemState::ERROR:
+      return "ERROR";
+    case SystemState::MAINTENANCE:
+      return "MAINTENANCE";
+    default:
+      return "UNKNOWN";
     }
+  }
+
+  String getCurrentStateString() const { return stateToString(currentState); }
 };
 
 #endif

@@ -22,16 +22,20 @@
 #define SERVER_RECONNECT_MIN 5000    // milliseconds
 #define SERVER_RECONNECT_MAX 60000   // milliseconds
 #define SERVER_BACKOFF_JITTER_PCT 20 // percent jitter on backoff (0-100)
-#define TCP_WRITE_TIMEOUT 5000       // milliseconds - timeout for send operations
-#define TCP_RECEIVE_TIMEOUT 10000    // milliseconds - timeout for receive operations (primarily for protocol compliance)
+#define TCP_WRITE_TIMEOUT 5000 // milliseconds - timeout for send operations
+#define TCP_RECEIVE_TIMEOUT                                                    \
+  10000 // milliseconds - timeout for receive operations (primarily for protocol
+        // compliance)
 
-// TCP chunk size MUST match server's TCP_CHUNK_SIZE expectation for proper streaming
-// Server (receiver.py) expects 19200 bytes per chunk:
+// TCP chunk size MUST match server's TCP_CHUNK_SIZE expectation for proper
+// streaming Server (receiver.py) expects 19200 bytes per chunk:
 //   - 9600 samples × 2 bytes/sample = 19200 bytes
 //   - Duration: 9600 samples ÷ 16000 Hz = 0.6 seconds = 600ms of audio
 //   - Data rate: 19200 bytes ÷ 0.6 sec = 32000 bytes/sec = 32 KB/sec
-// This aligns with server's SO_RCVBUF=65536 and socket receive loop optimization
-#define TCP_CHUNK_SIZE 19200 // bytes per write() chunk - MUST match server receiver.py
+// This aligns with server's SO_RCVBUF=65536 and socket receive loop
+// optimization
+#define TCP_CHUNK_SIZE                                                         \
+  19200 // bytes per write() chunk - MUST match server receiver.py
 
 // ===== Board Detection =====
 #ifdef ARDUINO_SEEED_XIAO_ESP32S3
@@ -73,15 +77,19 @@
 #define STATS_PRINT_INTERVAL 300000 // 5 minutes
 
 // ===== System Initialization & Timeouts =====
-#define SERIAL_INIT_DELAY 1000      // milliseconds - delay after serial init
-#define GRACEFUL_SHUTDOWN_DELAY 100 // milliseconds - delay between shutdown steps
-#define ERROR_RECOVERY_DELAY 5000   // milliseconds - delay before recovery attempt
-#define TASK_YIELD_DELAY 1          // milliseconds - delay in main loop for background tasks
+#define SERIAL_INIT_DELAY 1000 // milliseconds - delay after serial init
+#define GRACEFUL_SHUTDOWN_DELAY                                                \
+  100 // milliseconds - delay between shutdown steps
+#define ERROR_RECOVERY_DELAY                                                   \
+  5000 // milliseconds - delay before recovery attempt
+#define TASK_YIELD_DELAY                                                       \
+  1 // milliseconds - delay in main loop for background tasks
 
 // ===== TCP Keepalive Configuration =====
 #define TCP_KEEPALIVE_IDLE 5     // seconds - idle time before keepalive probe
 #define TCP_KEEPALIVE_INTERVAL 5 // seconds - interval between keepalive probes
-#define TCP_KEEPALIVE_COUNT 3    // count - number of keepalive probes before disconnect
+#define TCP_KEEPALIVE_COUNT                                                    \
+  3 // count - number of keepalive probes before disconnect
 
 // ===== Logger Configuration =====
 #define LOGGER_BUFFER_SIZE 256      // bytes - circular buffer for log messages
@@ -89,7 +97,8 @@
 #define LOGGER_BURST_MAX 60         // maximum burst of logs allowed
 
 // ===== Watchdog Configuration =====
-#define WATCHDOG_TIMEOUT_SEC 60 // seconds - watchdog timeout (aligned with connection operations)
+#define WATCHDOG_TIMEOUT_SEC                                                   \
+  60 // seconds - watchdog timeout (aligned with connection operations)
 
 // ===== Task Priorities =====
 #define TASK_PRIORITY_HIGH 5   // reserved for critical tasks
