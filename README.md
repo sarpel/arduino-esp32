@@ -1,32 +1,21 @@
-# ESP32 Audio Streamer v2.0 - Quick Start Guide
+# ESP32 Audio Streamer v2.0
 
-**Professional-grade I2S audio streaming system for ESP32 with comprehensive reliability features.**
+**Professional I2S audio streaming system for ESP32 with comprehensive reliability features**
 
 [![Build Status](https://img.shields.io/badge/build-SUCCESS-brightgreen)](#)
-[![RAM Usage](https://img.shields.io/badge/RAM-15.0%25-blue)](#)
-[![Flash Usage](https://img.shields.io/badge/Flash-59.6%25-blue)](#)
+[![RAM Usage](https://img.shields.io/badge/RAM-16.3%25-blue)](#)
+[![Flash Usage](https://img.shields.io/badge/Flash-63.1%25-blue)](#)
 [![License](https://img.shields.io/badge/license-MIT-green)](#)
-
----
-
-## 📚 Documentation Structure
-
-This project now uses **3 consolidated documentation files**:
-
-1. **README.md** (this file) - Quick Start & Overview
-2. **DEVELOPMENT.md** - Complete Technical Reference
-3. **TROUBLESHOOTING.md** - Diagnostics & Solutions
 
 ---
 
 ## 🚀 Quick Start
 
-### Requirements
+### Hardware Requirements
 
-- **Hardware**: ESP32-DevKit or Seeed XIAO ESP32-S3
+- **ESP32 Board**: ESP32-DevKit or Seeed XIAO ESP32-S3
 - **Microphone**: INMP441 I2S digital microphone
-- **Tools**: PlatformIO IDE or CLI
-- **Server**: TCP server listening on port 9000
+- **Server**: TCP server listening on port 9000 (192.168.1.50 by default)
 
 ### Hardware Connections
 
@@ -34,9 +23,9 @@ This project now uses **3 consolidated documentation files**:
 
 ```
 INMP441 Pin → ESP32 Pin
-  CLK      → GPIO 14
-  WS       → GPIO 15
-  SD       → GPIO 32
+  SCK      → GPIO 26
+  WS       → GPIO 25
+  SD       → GPIO 34
   GND      → GND
   VCC      → 3V3
 ```
@@ -45,42 +34,68 @@ INMP441 Pin → ESP32 Pin
 
 ```
 INMP441 Pin → XIAO Pin
-  CLK      → GPIO 2
+  SCK      → GPIO 2
   WS       → GPIO 3
   SD       → GPIO 9
   GND      → GND
   VCC      → 3V3
 ```
 
-### Installation & Configuration
+### Software Installation
 
-1. **Clone the project**
+1. **Install PlatformIO**
 
    ```bash
-   git clone <repo>
+   # VS Code: Install "PlatformIO IDE" extension
+   # OR CLI: pip install platformio
+   ```
+
+2. **Clone & Configure**
+
+   ```bash
+   git clone <repository-url>
    cd arduino-esp32
    ```
 
-2. **Edit `src/config.h`** with your settings:
+3. **Edit Configuration** (`src/config.h`)
 
    ```cpp
-   // WiFi
+   // WiFi credentials
    #define WIFI_SSID "YourNetwork"
    #define WIFI_PASSWORD "YourPassword"
 
-   // Server
+   // Server settings
    #define SERVER_HOST "192.168.1.50"  // Your server IP
    #define SERVER_PORT 9000            // TCP port
+
+   // Audio input gain (optional)
+   #define AUDIO_GAIN_NUMERATOR 3      // Gain = 3/2 = 1.5x
+   #define AUDIO_GAIN_DENOMINATOR 2
    ```
 
-3. **Upload firmware**
+4. **Build & Upload**
 
+   **For ESP32-DevKit:**
    ```bash
-   pio run --target upload --upload-port COM8
+   # Build firmware
+   pio run -e esp32dev
+
+   # Upload to ESP32 (adjust COM port)
+   pio run -e esp32dev --target upload --upload-port COM8
+
+   # Monitor serial output
+   pio device monitor --port COM8 --baud 115200
    ```
 
-4. **Monitor serial output**
+   **For Seeed XIAO ESP32-S3:**
    ```bash
+   # Build firmware
+   pio run -e seeed_xiao_esp32s3
+
+   # Upload to XIAO (adjust COM port)
+   pio run -e seeed_xiao_esp32s3 --target upload --upload-port COM8
+
+   # Monitor serial output
    pio device monitor --port COM8 --baud 115200
    ```
 
@@ -88,76 +103,45 @@ INMP441 Pin → XIAO Pin
 
 ```
 [INFO] ESP32 Audio Streamer Starting Up
+[INFO] Board: ESP32-DevKit
+[INFO] Input gain: 1.50x (3/2)
 [INFO] WiFi connected - IP: 192.168.1.19
-[INFO] Attempting to connect to server 192.168.1.50:9000 (attempt 1)...
+[INFO] OTA Update Service Started
+[INFO] Hostname: ESP32-AudioStreamer
 [INFO] Server connection established
-[INFO] Starting audio transmission: first chunk is 19200 bytes
+[INFO] Starting audio transmission
 ```
 
 ---
 
-## 🎯 Core Features
+## 🎯 Features
 
-### Streaming
+### Audio Streaming
 
-- **Sample Rate**: 16 kHz
-- **Bit Depth**: 16-bit
+- **Sample Rate**: 16 kHz (configurable 8-48 kHz)
+- **Bit Depth**: 16-bit signed PCM
 - **Channels**: Mono (1-channel)
 - **Bitrate**: ~256 Kbps (~32 KB/sec)
-- **Chunk Size**: 19200 bytes per TCP write (600ms of audio)
+- **Chunk Size**: 19200 bytes per TCP write (600ms audio buffer)
+- **Input Gain**: Configurable (default 1.5x)
 
-### Reliability
+### Reliability & Error Recovery
 
-- ✅ WiFi auto-reconnect with exponential backoff
-- ✅ TCP connection state machine
-- ✅ Transient vs permanent error classification
-- ✅ Automatic I2S reinitialization on failure
-- ✅ Memory leak detection via heap trending
-- ✅ Hardware watchdog timer (60 seconds)
+- ✅ **WiFi Management**: Auto-reconnect with exponential backoff
+- ✅ **TCP State Machine**: Connection lifecycle management
+- ✅ **Error Classification**: Transient vs permanent error handling
+- ✅ **I2S Recovery**: Automatic reinitialization on audio failures
+- ✅ **Memory Protection**: Leak detection via heap trend analysis
+- ✅ **Watchdog Timer**: Hardware watchdog (60s timeout)
+- ✅ **Config Validation**: Startup parameter validation
 
 ### Control & Monitoring
 
-- ✅ 8 Serial commands for runtime control
-- ✅ Real-time statistics every 5 minutes
-- ✅ 6 configurable debug levels
-- ✅ System health monitoring
-
----
-
-## 🛠️ Common Tasks
-
-### Check System Status
-
-```
-Send serial command: STATS
-Response: Current uptime, bytes sent, error counts, memory stats
-```
-
-### Change Debug Level
-
-```
-Send serial command: DEBUG 4
-(0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG, 5=VERBOSE)
-```
-
-### View WiFi Signal Strength
-
-```
-Send serial command: SIGNAL
-Response: Current RSSI in dBm
-```
-
-### Force Server Reconnect
-
-```
-Send serial command: RECONNECT
-```
-
-### View All Commands
-
-```
-Send serial command: HELP
-```
+- ✅ **Serial Commands**: 8 runtime control commands
+- ✅ **Real-time Stats**: Automatic statistics reporting (5-min intervals)
+- ✅ **Debug Levels**: 6 configurable verbosity levels (0-5)
+- ✅ **Health Monitoring**: System health checks on demand
+- ✅ **OTA Updates**: Over-the-air firmware updates
 
 ---
 
@@ -165,99 +149,250 @@ Send serial command: HELP
 
 ```
 ┌─────────────┐      ┌──────────────┐      ┌──────────────┐
-│  I2S Audio  │─────→│  Adaptive    │─────→│  WiFi/TCP    │
-│  Input      │      │  Buffer      │      │  Network     │
-│  (16kHz)    │      │  (adaptive)  │      │  Manager     │
+│  I2S Audio  │─────→│  Audio       │─────→│  WiFi/TCP    │
+│  Input      │      │  Processing  │      │  Network     │
+│  (16kHz)    │      │  (Gain)      │      │  Manager     │
 └─────────────┘      └──────────────┘      └──────────────┘
        ↑                                            ↓
-  INMP441                                    Server (TCP)
-  Microphone                                 Port 9000
+  INMP441 Mic                              TCP Server (Port 9000)
 
 ┌────────────────────────────────────────────────────────┐
 │              State Machine (main loop)                  │
 ├────────────────────────────────────────────────────────┤
-│ INITIALIZING → CONNECTING_WIFI → CONNECTING_SERVER   │
+│ INITIALIZING → CONNECTING_WIFI → CONNECTING_SERVER    │
 │                                  ↓                     │
-│                            CONNECTED → (loops)         │
+│                            CONNECTED → (streaming)     │
 │                                  ↓                     │
-│                           (error?) → ERROR state       │
+│                           (error?) → ERROR → recovery  │
 └────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 📋 Serial Command Reference
+## 🎮 Serial Commands
+
+Control the ESP32 at runtime via serial terminal:
+
+| Command | Description |
+|---------|-------------|
+| `HELP` | Show all available commands |
+| `STATUS` | Display current system state (WiFi, TCP, memory) |
+| `STATS` | Print detailed statistics (uptime, bytes, errors) |
+| `HEALTH` | Perform system health check |
+| `CONFIG SHOW` | Display current configuration |
+| `CONNECT` | Manually trigger server connection |
+| `DISCONNECT` | Disconnect from server |
+| `RESTART` | Reboot the ESP32 |
+
+**Example:**
 
 ```
-HELP              - Show all available commands
-STATS             - Print system statistics (uptime, bytes sent, memory, errors)
-STATUS            - Print current system state
-SIGNAL            - Print WiFi RSSI (signal strength) in dBm
-DEBUG [0-5]       - Set debug level (0=OFF, 5=VERBOSE)
-RECONNECT         - Force server reconnection
-REBOOT            - Restart the ESP32
+# Open serial monitor
+pio device monitor --port COM8 --baud 115200
+
+# Type command
+STATUS
+
+# Output:
+[INFO] ========== SYSTEM STATUS ==========
+[INFO] WiFi: CONNECTED (192.168.1.19)
+[INFO] WiFi Signal: -65 dBm
+[INFO] TCP State: CONNECTED
+[INFO] System State: CONNECTED
+[INFO] Free Memory: 230412 bytes (225.0 KB)
 ```
 
 ---
 
-## 🐛 Quick Troubleshooting
+## 🔧 Configuration
 
-**ESP32 won't connect to WiFi?**
+### Key Parameters (`src/config.h`)
 
-- Verify WiFi credentials in `config.h`
-- Ensure network is 2.4 GHz (not 5 GHz)
+**WiFi:**
+- `WIFI_SSID`, `WIFI_PASSWORD` - Network credentials
+- `WIFI_TIMEOUT` - Connection timeout (30s default)
 
-**Server connection timeout?**
+**Server:**
+- `SERVER_HOST` - TCP server IP address
+- `SERVER_PORT` - TCP server port (9000 default)
+- `TCP_CHUNK_SIZE` - Bytes per write (19200 = 600ms audio)
 
-- Check `SERVER_HOST` matches actual server IP
-- Verify server is listening: `ss -tuln | grep 9000`
-- Check firewall allows port 9000
+**Audio:**
+- `I2S_SAMPLE_RATE` - Audio sample rate (16000 Hz default)
+- `AUDIO_GAIN_NUMERATOR/DENOMINATOR` - Input gain (3/2 = 1.5x default)
 
-**No audio streaming?**
-
-- Verify I2S pins match your board
-- Check microphone connections
-- Send `STATS` command to see error count
-
-**For detailed help**, see `TROUBLESHOOTING.md`.
+**Debug:**
+- `DEBUG_LEVEL` - Log verbosity (0=OFF, 3=INFO, 5=VERBOSE)
 
 ---
 
-## 📦 Configuration Parameters
+## 🔄 OTA Updates
 
-See `src/config.h` for complete reference:
+### Enable OTA
 
-- WiFi: SSID, password, retry settings
-- Server: Host, port, reconnect backoff
-- I2S: Sample rate (16kHz), buffer sizes
-- Safety: Memory thresholds, watchdog timeout
-- Debug: Log level (0-5)
+OTA is automatically enabled after first USB flash. Find your ESP32:
+
+```bash
+# Find device on network
+pio device list --mdns
+
+# Or check serial output for IP address
+[INFO] OTA Update Service Started
+[INFO] IP Address: 192.168.1.19
+```
+
+### Upload via OTA
+
+**For ESP32-DevKit:**
+```bash
+# Upload new firmware over WiFi
+pio run -e esp32dev-ota --target upload
+```
+
+**For Seeed XIAO ESP32-S3:**
+```bash
+# Upload new firmware over WiFi
+pio run -e seeed_xiao_esp32s3-ota --target upload
+```
+
+### Security (Optional)
+
+Add password protection in `src/main.cpp`:
+
+```cpp
+ArduinoOTA.setPassword("YourSecurePassword");
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### WiFi Connection Issues
+
+**Problem**: `WiFi connection timeout`
+
+**Solutions**:
+- Verify SSID/password in `src/config.h`
+- Ensure using 2.4 GHz network (5 GHz not supported)
+- Check WiFi signal strength: Send `STATUS` command
+
+### Server Connection Issues
+
+**Problem**: `TCP write returned 0 (timeout or error)`
+
+**Solutions**:
+- Verify server is running:
+  ```bash
+  ss -tuln | grep 9000  # Linux/Mac
+  netstat -an | findstr 9000  # Windows
+  ```
+- Check `SERVER_HOST` IP matches actual server
+- Verify firewall allows port 9000
+- Test connectivity: `telnet 192.168.1.50 9000`
+
+### No Audio Streaming
+
+**Problem**: Audio not reaching server
+
+**Solutions**:
+- Verify I2S pin connections match config.h
+- Check microphone power (3.3V)
+- Send `STATS` command to check I2S errors
+- Inspect serial logs for I2S initialization
+
+### Memory Issues
+
+**Problem**: `Memory critically low` warnings
+
+**Solutions**:
+- Check for memory leaks: Send `STATS` command
+- Reduce `I2S_BUFFER_SIZE` if needed
+- Verify `MEMORY_WARN_THRESHOLD` appropriate for your use case
+
+### Unexpected Reboots
+
+**Problem**: ESP32 restarts randomly
+
+**Solutions**:
+- Check watchdog timeout: May need to increase `WATCHDOG_TIMEOUT_SEC`
+- Verify power supply provides stable 3.3V
+- Monitor serial output for crash stack traces
+- Enable verbose logging: `DEBUG_LEVEL 5`
+
+---
+
+## 📈 Performance Metrics
+
+### Resource Usage
+
+- **RAM**: 53 KB / 320 KB (16.3%)
+- **Flash**: 827 KB / 1.3 MB (63.1%)
+- **CPU**: ~15-25% @ 240 MHz
+- **Network**: ~32 KB/sec sustained throughput
+
+### Reliability Metrics
+
+- **WiFi Reconnect**: Exponential backoff (5s-60s)
+- **TCP Retry**: Automatic with connection state tracking
+- **Error Recovery**: <5s for transient errors
+- **Uptime**: Days-weeks typical (with proper power)
+
+---
+
+## 📖 Documentation
+
+- **README.md** (this file) - Quick start and user guide
+- **DEVELOPMENT.md** - Comprehensive developer reference
+- **AGENTS.md** - Repository guidelines and conventions
+- **platformio.ini** - Build configuration
 
 ---
 
 ## 🔄 Recent Updates
 
-**October 21, 2025** - Connection Startup Bug Fix
+**November 2025** - v2.0 Reliability Release
 
-- Fixed 5-second startup delay before first server connection
-- Added `startExpired()` method to NonBlockingTimer
-- Server connections now attempt immediately after WiFi
+- ✅ Fixed indentation issues in main.cpp
+- ✅ Corrected unsigned integer validation logic
+- ✅ Updated hardware pin documentation
+- ✅ Enhanced configuration validation
+- ✅ Improved error recovery mechanisms
+- ✅ Consolidated documentation
 
-**October 20, 2025** - Protocol Alignment Complete
+**October 2025** - Connection & OTA Updates
 
-- TCP socket options verified and aligned
-- Data format: 16kHz, 16-bit, mono ✓
-- Chunk size: 19200 bytes ✓
-- Full server/client compatibility ✓
-
----
-
-## 📖 For More Information
-
-- **Complete Technical Reference** → `DEVELOPMENT.md`
-- **Troubleshooting & Diagnostics** → `TROUBLESHOOTING.md`
-- **Source Code** → `src/` directory
+- ✅ Fixed 5-second startup delay before first connection
+- ✅ Added OTA functionality with comprehensive error handling
+- ✅ TCP socket protocol alignment complete
+- ✅ Full server/client compatibility verified
 
 ---
 
-**Status**: ✅ Production Ready | **Last Updated**: October 21, 2025 | **Version**: 2.0
+## 🤝 Contributing
+
+1. Follow coding standards in **AGENTS.md**
+2. Test builds before committing: `pio run -e esp32dev` or `pio run -e seeed_xiao_esp32s3`
+3. Run tests: `pio test -e esp32dev` or `pio test -e seeed_xiao_esp32s3`
+4. Document changes in commit messages
+
+---
+
+## 📝 License
+
+MIT License - See LICENSE file for details
+
+---
+
+## 🆘 Support
+
+**Issues**: Create GitHub issue with:
+- ESP32 board model
+- Serial output logs
+- Configuration (sanitize credentials)
+- Steps to reproduce
+
+**Documentation**: See **DEVELOPMENT.md** for detailed technical reference
+
+---
+
+**Status**: ✅ Production Ready | **Version**: 2.0 | **Last Updated**: November 2025

@@ -50,13 +50,14 @@ void SerialCommandHandler::processCommands() {
             // Parse and execute command
             char* cmd = command_buffer;
             char* args = nullptr;
-            char* space = strchr(command_buffer, ' ');
-            if (space != nullptr) {
-                *space = '\0'; // Null-terminate the command
-                args = space + 1;
-            }
 
+            // Check for null pointer before dereferencing
             if (cmd != nullptr) {
+                char* space = strchr(command_buffer, ' ');
+                if (space != nullptr) {
+                    *space = '\0'; // Null-terminate the command
+                    args = space + 1;
+                }
                 if (strcmp(cmd, "STATUS") == 0) {
                     handleStatusCommand();
                 } else if (strcmp(cmd, "CONFIG") == 0) {
@@ -168,6 +169,7 @@ void SerialCommandHandler::handleConfigCommand(const char* args) {
         LOG_INFO("Server: %s:%d", SERVER_HOST, SERVER_PORT);
         LOG_INFO("I2S Sample Rate: %d Hz", I2S_SAMPLE_RATE);
         LOG_INFO("I2S Buffer Size: %d bytes", I2S_BUFFER_SIZE);
+        LOG_INFO("Audio Input Gain: %d/%d (~%.2fx)", AUDIO_GAIN_NUMERATOR, AUDIO_GAIN_DENOMINATOR, (float)AUDIO_GAIN_NUMERATOR / (float)AUDIO_GAIN_DENOMINATOR);
         LOG_INFO("Memory Warning Threshold: %d bytes", MEMORY_WARN_THRESHOLD);
         LOG_INFO("Memory Critical Threshold: %d bytes", MEMORY_CRITICAL_THRESHOLD);
         LOG_INFO("========================================");
