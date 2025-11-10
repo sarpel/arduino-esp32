@@ -30,6 +30,12 @@ size_t AdaptiveBuffer::calculateBufferSize(int32_t rssi)
     //
     // Note: We cap at 150% to avoid excessive memory usage on long-term weak signals
 
+    // Safety check: ensure base_buffer_size is valid
+    if (base_buffer_size == 0)
+    {
+        return 256; // Return minimum safe size
+    }
+
     size_t new_size;
 
     if (rssi >= -60)
@@ -83,6 +89,15 @@ void AdaptiveBuffer::updateBufferSize(int32_t rssi)
     // Only log if size changed significantly (>10%)
     if (new_size != current_buffer_size)
     {
+        // Prevent division by zero
+        if (current_buffer_size == 0)
+        {
+            current_buffer_size = new_size;
+            adjustment_count++;
+            last_adjustment_time = now;
+            return;
+        }
+
         int change_pct = ((int)new_size - (int)current_buffer_size) * 100 / (int)current_buffer_size;
 
         if (abs(change_pct) >= 10)

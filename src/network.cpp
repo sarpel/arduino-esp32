@@ -51,12 +51,13 @@ static inline unsigned long apply_jitter(unsigned long base_ms)
     int32_t jitter = (int32_t)(r % jitter_span) - jitter_range;
 
     // Apply jitter and bounds-check the result
-    long with_jitter = (long)base_ms + jitter;
-    if (with_jitter < (long)SERVER_RECONNECT_MIN)
+    // Use int64_t to avoid overflow when adding jitter to base_ms
+    int64_t with_jitter = (int64_t)base_ms + jitter;
+    if (with_jitter < (int64_t)SERVER_RECONNECT_MIN)
     {
         with_jitter = SERVER_RECONNECT_MIN;
     }
-    if ((unsigned long)with_jitter > SERVER_RECONNECT_MAX)
+    if (with_jitter > (int64_t)SERVER_RECONNECT_MAX)
     {
         with_jitter = SERVER_RECONNECT_MAX;
     }
@@ -346,6 +347,13 @@ WiFiClient &NetworkManager::getClient()
 
 bool NetworkManager::writeData(const uint8_t *data, size_t length)
 {
+    // Validate input parameters
+    if (data == nullptr || length == 0)
+    {
+        LOG_WARN("Invalid write parameters: data=%p, length=%u", data, (unsigned)length);
+        return false;
+    }
+
     if (!isServerConnected())
     {
         return false;

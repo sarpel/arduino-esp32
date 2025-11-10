@@ -76,6 +76,18 @@ void I2SAudio::cleanup() {
 }
 
 bool I2SAudio::readData(uint8_t* buffer, size_t buffer_size, size_t* bytes_read) {
+    // Validate input parameters
+    if (buffer == nullptr || bytes_read == nullptr) {
+        LOG_ERROR("I2S readData: invalid parameters (buffer=%p, bytes_read=%p)", buffer, bytes_read);
+        return false;
+    }
+
+    if (buffer_size == 0) {
+        LOG_WARN("I2S readData: buffer_size is 0");
+        *bytes_read = 0;
+        return false;
+    }
+
     if (!is_initialized) {
         LOG_ERROR("I2S not initialized");
         return false;
