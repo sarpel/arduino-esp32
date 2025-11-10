@@ -89,20 +89,20 @@ private:
         }
         
         // Validate retry parameters
-        if (WIFI_RETRY_DELAY <= 0) {
-            LOG_WARN("WIFI_RETRY_DELAY is 0 or negative - using default 500ms");
+        if (WIFI_RETRY_DELAY == 0) {
+            LOG_WARN("WIFI_RETRY_DELAY is 0 - using default 500ms");
         } else {
             LOG_INFO("  ✓ WiFi retry delay: %u ms", WIFI_RETRY_DELAY);
         }
         
-        if (WIFI_MAX_RETRIES <= 0) {
-            LOG_WARN("WIFI_MAX_RETRIES is 0 or negative - using default 20");
+        if (WIFI_MAX_RETRIES == 0) {
+            LOG_WARN("WIFI_MAX_RETRIES is 0 - using default 20");
         } else {
             LOG_INFO("  ✓ WiFi max retries: %u", WIFI_MAX_RETRIES);
         }
         
-        if (WIFI_TIMEOUT <= 0) {
-            LOG_WARN("WIFI_TIMEOUT is 0 or negative - using default 30000ms");
+        if (WIFI_TIMEOUT == 0) {
+            LOG_WARN("WIFI_TIMEOUT is 0 - using default 30000ms");
         } else {
             LOG_INFO("  ✓ WiFi timeout: %u ms", WIFI_TIMEOUT);
         }
@@ -136,7 +136,7 @@ private:
         }
         
         // Validate reconnection timeouts
-        if (SERVER_RECONNECT_MIN <= 0) {
+        if (SERVER_RECONNECT_MIN == 0) {
             LOG_WARN("SERVER_RECONNECT_MIN is %u ms - should be > 0", SERVER_RECONNECT_MIN);
         } else if (SERVER_RECONNECT_MIN < 1000) {
             LOG_WARN("SERVER_RECONNECT_MIN (%u ms) is very short - minimum recommended is 1000ms", SERVER_RECONNECT_MIN);
@@ -144,7 +144,7 @@ private:
             LOG_INFO("  ✓ Server reconnect min: %u ms", SERVER_RECONNECT_MIN);
         }
         
-        if (SERVER_RECONNECT_MAX <= 0) {
+        if (SERVER_RECONNECT_MAX == 0) {
             LOG_WARN("SERVER_RECONNECT_MAX is %u ms - should be > 0", SERVER_RECONNECT_MAX);
         } else if (SERVER_RECONNECT_MAX < SERVER_RECONNECT_MIN) {
             LOG_ERROR("SERVER_RECONNECT_MAX (%u ms) cannot be less than SERVER_RECONNECT_MIN (%u ms)",
@@ -154,7 +154,7 @@ private:
             LOG_INFO("  ✓ Server reconnect max: %u ms", SERVER_RECONNECT_MAX);
         }
         
-        if (TCP_WRITE_TIMEOUT <= 0) {
+        if (TCP_WRITE_TIMEOUT == 0) {
             LOG_WARN("TCP_WRITE_TIMEOUT is %u ms - should be > 0", TCP_WRITE_TIMEOUT);
         } else if (TCP_WRITE_TIMEOUT < 1000) {
             LOG_WARN("TCP_WRITE_TIMEOUT (%u ms) is very short", TCP_WRITE_TIMEOUT);
@@ -174,7 +174,7 @@ private:
         
         LOG_INFO("Checking I2S configuration...");
         
-        if (I2S_SAMPLE_RATE <= 0) {
+        if (I2S_SAMPLE_RATE == 0) {
             LOG_ERROR("I2S_SAMPLE_RATE must be > 0, got %u", I2S_SAMPLE_RATE);
             valid = false;
         } else if (I2S_SAMPLE_RATE < 8000 || I2S_SAMPLE_RATE > 48000) {
@@ -183,7 +183,7 @@ private:
             LOG_INFO("  ✓ I2S sample rate: %u Hz", I2S_SAMPLE_RATE);
         }
         
-        if (I2S_BUFFER_SIZE <= 0) {
+        if (I2S_BUFFER_SIZE == 0) {
             LOG_ERROR("I2S_BUFFER_SIZE must be > 0, got %u", I2S_BUFFER_SIZE);
             valid = false;
         } else if ((I2S_BUFFER_SIZE & (I2S_BUFFER_SIZE - 1)) != 0) {
@@ -192,7 +192,7 @@ private:
             LOG_INFO("  ✓ I2S buffer size: %u bytes", I2S_BUFFER_SIZE);
         }
         
-        if (I2S_DMA_BUF_COUNT <= 0) {
+        if (I2S_DMA_BUF_COUNT == 0) {
             LOG_ERROR("I2S_DMA_BUF_COUNT must be > 0, got %u", I2S_DMA_BUF_COUNT);
             valid = false;
         } else if (I2S_DMA_BUF_COUNT < 2) {
@@ -201,14 +201,14 @@ private:
             LOG_INFO("  ✓ I2S DMA buffer count: %u", I2S_DMA_BUF_COUNT);
         }
         
-        if (I2S_DMA_BUF_LEN <= 0) {
+        if (I2S_DMA_BUF_LEN == 0) {
             LOG_ERROR("I2S_DMA_BUF_LEN must be > 0, got %u", I2S_DMA_BUF_LEN);
             valid = false;
         } else {
             LOG_INFO("  ✓ I2S DMA buffer length: %u", I2S_DMA_BUF_LEN);
         }
         
-        if (I2S_MAX_READ_RETRIES <= 0) {
+        if (I2S_MAX_READ_RETRIES == 0) {
             LOG_WARN("I2S_MAX_READ_RETRIES is %u - should be > 0", I2S_MAX_READ_RETRIES);
         } else {
             LOG_INFO("  ✓ I2S max read retries: %u", I2S_MAX_READ_RETRIES);
@@ -226,7 +226,7 @@ private:
         
         LOG_INFO("Checking timing configuration...");
         
-        if (MEMORY_CHECK_INTERVAL <= 0) {
+        if (MEMORY_CHECK_INTERVAL == 0) {
             LOG_WARN("MEMORY_CHECK_INTERVAL is %u ms - should be > 0", MEMORY_CHECK_INTERVAL);
         } else if (MEMORY_CHECK_INTERVAL < 5000) {
             LOG_WARN("MEMORY_CHECK_INTERVAL (%u ms) is very frequent", MEMORY_CHECK_INTERVAL);
@@ -234,13 +234,13 @@ private:
             LOG_INFO("  ✓ Memory check interval: %u ms", MEMORY_CHECK_INTERVAL);
         }
         
-        if (RSSI_CHECK_INTERVAL <= 0) {
+        if (RSSI_CHECK_INTERVAL == 0) {
             LOG_WARN("RSSI_CHECK_INTERVAL is %u ms - should be > 0", RSSI_CHECK_INTERVAL);
         } else {
             LOG_INFO("  ✓ RSSI check interval: %u ms", RSSI_CHECK_INTERVAL);
         }
         
-        if (STATS_PRINT_INTERVAL <= 0) {
+        if (STATS_PRINT_INTERVAL == 0) {
             LOG_WARN("STATS_PRINT_INTERVAL is %u ms - should be > 0", STATS_PRINT_INTERVAL);
         } else {
             LOG_INFO("  ✓ Stats print interval: %u ms", STATS_PRINT_INTERVAL);
@@ -258,14 +258,14 @@ private:
         
         LOG_INFO("Checking memory thresholds...");
         
-        if (MEMORY_CRITICAL_THRESHOLD <= 0) {
+        if (MEMORY_CRITICAL_THRESHOLD == 0) {
             LOG_ERROR("MEMORY_CRITICAL_THRESHOLD must be > 0, got %u bytes", MEMORY_CRITICAL_THRESHOLD);
             valid = false;
         } else {
             LOG_INFO("  ✓ Memory critical threshold: %u bytes", MEMORY_CRITICAL_THRESHOLD);
         }
         
-        if (MEMORY_WARN_THRESHOLD <= 0) {
+        if (MEMORY_WARN_THRESHOLD == 0) {
             LOG_ERROR("MEMORY_WARN_THRESHOLD must be > 0, got %u bytes", MEMORY_WARN_THRESHOLD);
             valid = false;
         } else {
@@ -288,7 +288,7 @@ private:
             LOG_INFO("  ✓ RSSI weak threshold: %d dBm", RSSI_WEAK_THRESHOLD);
         }
         
-        if (MAX_CONSECUTIVE_FAILURES <= 0) {
+        if (MAX_CONSECUTIVE_FAILURES == 0) {
             LOG_WARN("MAX_CONSECUTIVE_FAILURES is %u - should be > 0", MAX_CONSECUTIVE_FAILURES);
         } else {
             LOG_INFO("  ✓ Max consecutive failures: %u", MAX_CONSECUTIVE_FAILURES);
@@ -306,7 +306,7 @@ private:
 
         LOG_INFO("Checking watchdog configuration...");
 
-        if (WATCHDOG_TIMEOUT_SEC <= 0) {
+        if (WATCHDOG_TIMEOUT_SEC == 0) {
             LOG_ERROR("WATCHDOG_TIMEOUT_SEC must be > 0, got %u seconds", WATCHDOG_TIMEOUT_SEC);
             valid = false;
         } else if (WATCHDOG_TIMEOUT_SEC < 30) {

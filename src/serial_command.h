@@ -31,7 +31,6 @@ private:
     static void printStatus();
     static void printHealth();
     static void clearBuffer();
-    static char* getNextToken(char* str, const char* delim);
 };
 
 #endif // SERIAL_COMMAND_H

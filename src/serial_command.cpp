@@ -38,7 +38,7 @@ void SerialCommandHandler::processCommands() {
 
     // Handle newline (end of command)
     if (c == '\r' || c == '\n') {
-        if (buffer_index > 0) {
+        if (buffer_index > 0 && buffer_index < BUFFER_SIZE) {
             command_buffer[buffer_index] = '\0';
             Serial.println(); // Echo newline
 
@@ -56,27 +56,25 @@ void SerialCommandHandler::processCommands() {
                 args = space + 1;
             }
 
-            if (cmd != nullptr) {
-                if (strcmp(cmd, "STATUS") == 0) {
-                    handleStatusCommand();
-                } else if (strcmp(cmd, "CONFIG") == 0) {
-                    handleConfigCommand(args);
-                } else if (strcmp(cmd, "RESTART") == 0) {
-                    handleRestartCommand();
-                } else if (strcmp(cmd, "DISCONNECT") == 0) {
-                    handleDisconnectCommand();
-                } else if (strcmp(cmd, "CONNECT") == 0) {
-                    handleConnectCommand();
-                } else if (strcmp(cmd, "STATS") == 0) {
-                    handleStatsCommand();
-                } else if (strcmp(cmd, "HEALTH") == 0) {
-                    handleHealthCommand();
-                } else if (strcmp(cmd, "HELP") == 0) {
-                    handleHelpCommand();
-                } else {
-                    LOG_ERROR("Unknown command: %s", cmd);
-                    handleHelpCommand();
-                }
+            if (strcmp(cmd, "STATUS") == 0) {
+                handleStatusCommand();
+            } else if (strcmp(cmd, "CONFIG") == 0) {
+                handleConfigCommand(args);
+            } else if (strcmp(cmd, "RESTART") == 0) {
+                handleRestartCommand();
+            } else if (strcmp(cmd, "DISCONNECT") == 0) {
+                handleDisconnectCommand();
+            } else if (strcmp(cmd, "CONNECT") == 0) {
+                handleConnectCommand();
+            } else if (strcmp(cmd, "STATS") == 0) {
+                handleStatsCommand();
+            } else if (strcmp(cmd, "HEALTH") == 0) {
+                handleHealthCommand();
+            } else if (strcmp(cmd, "HELP") == 0) {
+                handleHelpCommand();
+            } else {
+                LOG_ERROR("Unknown command: %s", cmd);
+                handleHelpCommand();
             }
 
             clearBuffer();
@@ -88,6 +86,12 @@ void SerialCommandHandler::processCommands() {
     if (buffer_index < BUFFER_SIZE - 1) {
         command_buffer[buffer_index++] = c;
         Serial.write(c);  // Echo character
+    } else {
+        // Buffer full - warn user and ignore character
+        if (buffer_index == BUFFER_SIZE - 1) {
+            LOG_WARN("Command buffer full - command too long");
+            clearBuffer();
+        }
     }
 }
 

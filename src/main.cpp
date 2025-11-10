@@ -53,7 +53,8 @@ struct SystemStats {
         if (current_heap < min_heap) min_heap = current_heap;
 
         // Detect heap trend (potential memory leak)
-        if (current_heap < last_heap - 1000) {
+        // Use signed comparison to avoid underflow with unsigned integers
+        if (last_heap > current_heap + 1000) {
             heap_trend = -1;  // Decreasing - potential leak
         } else if (current_heap > last_heap + 1000) {
             heap_trend = 1;   // Increasing - memory recovered

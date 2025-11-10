@@ -30,6 +30,12 @@ size_t AdaptiveBuffer::calculateBufferSize(int32_t rssi)
     //
     // Note: We cap at 150% to avoid excessive memory usage on long-term weak signals
 
+    // Safety check: ensure base_buffer_size is valid
+    if (base_buffer_size == 0)
+    {
+        return 256; // Return minimum safe size
+    }
+
     size_t new_size;
 
     if (rssi >= -60)
