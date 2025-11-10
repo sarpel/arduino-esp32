@@ -119,7 +119,12 @@ void checkMemoryHealth() {
     if (free_heap < MEMORY_CRITICAL_THRESHOLD) {
         LOG_CRITICAL("Critical low memory: %u bytes - system may crash", free_heap);
         // Consider restarting if critically low
-        if (free_heap < MEMORY_CRITICAL_THRESHOLD / 2) {
+        // Use a safer threshold calculation
+        uint32_t emergency_threshold = MEMORY_CRITICAL_THRESHOLD / 2;
+        if (emergency_threshold == 0) {
+            emergency_threshold = 1000; // Minimum 1KB emergency threshold
+        }
+        if (free_heap < emergency_threshold) {
             LOG_CRITICAL("Memory critically low - initiating graceful restart");
             gracefulShutdown();
             ESP.restart();

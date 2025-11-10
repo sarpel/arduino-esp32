@@ -76,6 +76,9 @@ private:
         if (strlen(WIFI_SSID) == 0) {
             LOG_ERROR("WiFi SSID is empty - must configure WIFI_SSID in config.h");
             valid = false;
+        } else if (strcmp(WIFI_SSID, "YOUR_WIFI_SSID") == 0) {
+            LOG_ERROR("WiFi SSID is still set to default placeholder - must configure WIFI_SSID in config.h");
+            valid = false;
         } else {
             LOG_INFO("  ✓ WiFi SSID configured");
         }
@@ -83,6 +86,9 @@ private:
         // Check password
         if (strlen(WIFI_PASSWORD) == 0) {
             LOG_ERROR("WiFi password is empty - must configure WIFI_PASSWORD in config.h");
+            valid = false;
+        } else if (strcmp(WIFI_PASSWORD, "YOUR_WIFI_PASSWORD") == 0) {
+            LOG_ERROR("WiFi password is still set to default placeholder - must configure WIFI_PASSWORD in config.h");
             valid = false;
         } else {
             LOG_INFO("  ✓ WiFi password configured");
@@ -122,6 +128,9 @@ private:
         // Check HOST
         if (strlen(SERVER_HOST) == 0) {
             LOG_ERROR("Server HOST is empty - must configure SERVER_HOST in config.h");
+            valid = false;
+        } else if (strcmp(SERVER_HOST, "YOUR_SERVER_IP") == 0) {
+            LOG_ERROR("Server HOST is still set to default placeholder - must configure SERVER_HOST in config.h");
             valid = false;
         } else {
             LOG_INFO("  ✓ Server HOST configured: %s", SERVER_HOST);

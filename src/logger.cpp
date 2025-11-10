@@ -46,6 +46,12 @@ void Logger::init(LogLevel level)
 
 void Logger::log(LogLevel level, const char *file, int line, const char *fmt, ...)
 {
+    // Validate input parameters
+    if (file == nullptr || fmt == nullptr)
+    {
+        return; // Silently ignore invalid calls to prevent recursion
+    }
+
     if (level < min_level)
         return;
 

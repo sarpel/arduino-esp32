@@ -89,6 +89,15 @@ void AdaptiveBuffer::updateBufferSize(int32_t rssi)
     // Only log if size changed significantly (>10%)
     if (new_size != current_buffer_size)
     {
+        // Prevent division by zero
+        if (current_buffer_size == 0)
+        {
+            current_buffer_size = new_size;
+            adjustment_count++;
+            last_adjustment_time = now;
+            return;
+        }
+
         int change_pct = ((int)new_size - (int)current_buffer_size) * 100 / (int)current_buffer_size;
 
         if (abs(change_pct) >= 10)
