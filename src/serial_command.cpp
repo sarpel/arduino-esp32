@@ -162,7 +162,8 @@ void SerialCommandHandler::handleConfigCommand(const char* args) {
     char args_copy[64];
     size_t args_len = strlen(args);
     if (args_len >= sizeof(args_copy)) {
-        LOG_ERROR("CONFIG: Arguments too long (%u chars, max %u)", args_len, sizeof(args_copy) - 1);
+        // BUG FIX: Use %zu format specifier for size_t to avoid issues on 64-bit systems
+        LOG_ERROR("CONFIG: Arguments too long (%zu chars, max %zu)", args_len, sizeof(args_copy) - 1);
         return;
     }
     

@@ -69,7 +69,7 @@ def analyze_elf_sections(elf_path):
     """Analyze ELF file sections using size command"""
     # BUG FIX: Add validation for elf_path parameter
     if not elf_path or not Path(elf_path).exists():
-        LOG.warning(f"ELF file does not exist: {elf_path}")
+        print(f"{Colors.WARNING}Warning: ELF file does not exist: {elf_path}{Colors.ENDC}")
         return {}
     
     try:
@@ -97,12 +97,14 @@ def analyze_elf_sections(elf_path):
                 section_name = parts[0]
                 try:
                     section_size = int(parts[1])
-                    # BUG FIX: Validate section size to prevent negative values
+                    # BUG FIX: Validate section size before adding to dict
+                    # Check for negative values which indicate parsing errors
                     if section_size < 0:
                         print(f"{Colors.WARNING}Warning: Negative section size for {section_name}: {section_size}{Colors.ENDC}")
                         continue
                     sections[section_name] = section_size
                 except ValueError:
+                    # Not a valid integer, skip this line
                     continue
 
         return sections

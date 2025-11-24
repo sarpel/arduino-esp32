@@ -81,11 +81,13 @@ void AdaptiveBuffer::updateBufferSize(int32_t rssi)
     // Only adjust if minimum interval passed (5 seconds)
     unsigned long now = millis();
     
-    // BUG FIX: Handle millis() overflow (occurs every ~49.7 days)
-    // When millis() wraps around, the subtraction will be incorrect
-    // Use proper overflow-safe comparison
-    if (last_adjustment_time != 0 && (now - last_adjustment_time < 5000) && (now >= last_adjustment_time))
-    {
+    // BUG FIX: Use unsigned arithmetic for overflow-safe time comparison
+    // Unsigned subtraction handles millis() wraparound correctly
+    // Example: now=5, last=ULONG_MAX-10 → elapsed = 5 - (ULONG_MAX-10) = 16 (correct!)
+    unsigned long elapsed = now - last_adjustment_time;
+    
+    // Skip if too soon (but allow first call when last_adjustment_time == 0)
+    if (last_adjustment_time != 0 && elapsed < 5000) {
         return;
     }
 

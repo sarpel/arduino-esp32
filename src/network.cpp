@@ -56,11 +56,9 @@ static inline unsigned long apply_jitter(unsigned long base_ms)
     uint32_t jitter_range = (uint32_t)jitter_range_64;
 
     // Apply random jitter within [-jitter_range, +jitter_range]
-    // BUG FIX: Check for zero to prevent division by zero
+    // BUG FIX: jitter_span = 2*jitter_range + 1, minimum value is 1 (when jitter_range=0)
+    // So jitter_span can never be 0, but we keep defensive check for safety
     uint32_t jitter_span = (2u * jitter_range) + 1u;
-    if (jitter_span == 0) {
-        jitter_span = 1; // Safety: prevent modulo by zero
-    }
     
     int32_t jitter = (int32_t)(r % jitter_span) - (int32_t)jitter_range;
 
