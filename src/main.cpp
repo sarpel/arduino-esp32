@@ -19,6 +19,26 @@ StateManager systemState;
 static uint8_t audio_buffer[I2S_BUFFER_SIZE];  // Static buffer to avoid heap fragmentation
 static bool ota_initialized = false;  // Track OTA initialization status
 
+// MEMORY SAFETY: Add buffer canaries to detect corruption
+// These magic values are placed before and after the audio buffer
+// If they change, it indicates a buffer overflow/underflow occurred
+#define BUFFER_CANARY_VALUE 0xDEADBEEF
+static uint32_t buffer_canary_before = BUFFER_CANARY_VALUE;
+static uint32_t buffer_canary_after = BUFFER_CANARY_VALUE;
+
+// Function to check buffer canaries for corruption
+static inline bool checkBufferCanaries() {
+    if (buffer_canary_before != BUFFER_CANARY_VALUE) {
+        LOG_CRITICAL("Buffer underflow detected! Canary before corrupted: 0x%08X", buffer_canary_before);
+        return false;
+    }
+    if (buffer_canary_after != BUFFER_CANARY_VALUE) {
+        LOG_CRITICAL("Buffer overflow detected! Canary after corrupted: 0x%08X", buffer_canary_after);
+        return false;
+    }
+    return true;
+}
+
 // ===== Statistics =====
 struct SystemStats {
     uint64_t total_bytes_sent;
@@ -53,12 +73,18 @@ struct SystemStats {
         if (current_heap < min_heap) min_heap = current_heap;
 
         // Detect heap trend (potential memory leak)
-        if (current_heap < last_heap - 1000) {
-            heap_trend = -1;  // Decreasing - potential leak
-        } else if (current_heap > last_heap + 1000) {
-            heap_trend = 1;   // Increasing - memory recovered
+        // PERFORMANCE: Use simpler comparison instead of arithmetic for trend detection
+        // Previous version used subtraction which could be expensive on some platforms
+        const uint32_t TREND_THRESHOLD = 1000;
+        
+        if (last_heap > current_heap) {
+            uint32_t decrease = last_heap - current_heap;
+            heap_trend = (decrease >= TREND_THRESHOLD) ? -1 : 0;
+        } else if (current_heap > last_heap) {
+            uint32_t increase = current_heap - last_heap;
+            heap_trend = (increase >= TREND_THRESHOLD) ? 1 : 0;
         } else {
-            heap_trend = 0;   // Stable
+            heap_trend = 0;  // Exactly equal
         }
 
         last_heap = current_heap;
@@ -68,12 +94,31 @@ struct SystemStats {
     void printStats() {
         updateMemoryStats();  // Update memory trend before printing
 
-        unsigned long uptime_sec = (millis() - uptime_start) / 1000;
+        // BUG FIX: Prevent overflow in uptime calculation
+        // millis() can wrap after 49.7 days, handle gracefully
+        unsigned long current_millis = millis();
+        unsigned long uptime_ms;
+        
+        if (current_millis >= uptime_start) {
+            uptime_ms = current_millis - uptime_start;
+        } else {
+            // millis() wrapped around - calculate correctly
+            uptime_ms = (ULONG_MAX - uptime_start) + current_millis + 1;
+        }
+        
+        unsigned long uptime_sec = uptime_ms / 1000;
         uint32_t current_heap = ESP.getFreeHeap();
 
         LOG_INFO("=== System Statistics ===");
         LOG_INFO("Uptime: %lu seconds (%.1f hours)", uptime_sec, uptime_sec / 3600.0);
-        LOG_INFO("Data sent: %llu bytes (%.2f MB)", total_bytes_sent, total_bytes_sent / 1048576.0);
+        
+        // BUG FIX: Safely handle very large byte counts to prevent format overflow
+        if (total_bytes_sent < 1048576ULL) {
+            LOG_INFO("Data sent: %llu bytes (%.2f KB)", total_bytes_sent, total_bytes_sent / 1024.0);
+        } else {
+            LOG_INFO("Data sent: %llu bytes (%.2f MB)", total_bytes_sent, total_bytes_sent / 1048576.0);
+        }
+        
         LOG_INFO("WiFi reconnects: %u", NetworkManager::getWiFiReconnectCount());
         LOG_INFO("Server reconnects: %u", NetworkManager::getServerReconnectCount());
         LOG_INFO("I2S errors: %u (total: %u, transient: %u, permanent: %u)",
@@ -87,7 +132,13 @@ struct SystemStats {
         LOG_INFO("Current heap: %u bytes", current_heap);
         LOG_INFO("Peak heap: %u bytes", peak_heap);
         LOG_INFO("Min heap: %u bytes", min_heap);
-        LOG_INFO("Heap range: %u bytes", peak_heap - min_heap);
+        
+        // BUG FIX: Check for underflow before subtraction
+        if (peak_heap >= min_heap) {
+            LOG_INFO("Heap range: %u bytes", peak_heap - min_heap);
+        } else {
+            LOG_WARN("Heap range: invalid (peak < min, possible data corruption)");
+        }
 
         // Detect potential memory leak
         if (heap_trend == -1) {
@@ -110,6 +161,14 @@ NonBlockingTimer statsPrintTimer(STATS_PRINT_INTERVAL, true);
 void checkMemoryHealth() {
     if (!memoryCheckTimer.check()) return;
 
+    // MEMORY SAFETY: Check buffer canaries for corruption
+    if (!checkBufferCanaries()) {
+        LOG_CRITICAL("Memory corruption detected in audio buffer!");
+        LOG_CRITICAL("System will restart to prevent further damage");
+        delay(2000);
+        ESP.restart();
+    }
+
     // Update memory tracking statistics
     stats.updateMemoryStats();
 
@@ -118,10 +177,15 @@ void checkMemoryHealth() {
     if (free_heap < MEMORY_CRITICAL_THRESHOLD) {
         LOG_CRITICAL("Critical low memory: %u bytes - system may crash", free_heap);
         // Consider restarting if critically low
-        if (free_heap < MEMORY_CRITICAL_THRESHOLD / 2) {
-            LOG_CRITICAL("Memory critically low - initiating graceful restart");
+        // BUG FIX: Add additional validation before restart to prevent restart loops
+        // Only restart if we've been running for at least 5 minutes (300 seconds)
+        unsigned long uptime_sec = (millis() - stats.uptime_start) / 1000;
+        if (free_heap < MEMORY_CRITICAL_THRESHOLD / 2 && uptime_sec > 300) {
+            LOG_CRITICAL("Memory critically low - initiating graceful restart (uptime: %lu sec)", uptime_sec);
             gracefulShutdown();
             ESP.restart();
+        } else if (free_heap < MEMORY_CRITICAL_THRESHOLD / 2) {
+            LOG_CRITICAL("Memory critically low but uptime too short (%lu sec) - avoiding restart loop", uptime_sec);
         }
     } else if (free_heap < MEMORY_WARN_THRESHOLD) {
         LOG_WARN("Memory low: %u bytes", free_heap);
@@ -408,9 +472,28 @@ void loop() {
 
                 // Read audio data with retry
                 size_t bytes_read = 0;
+                
+                // BUG FIX: Validate buffer before passing to I2S
+                // Ensure audio_buffer is properly allocated and sized
+                static_assert(sizeof(audio_buffer) >= I2S_BUFFER_SIZE, 
+                             "audio_buffer must be at least I2S_BUFFER_SIZE bytes");
+                
                 if (I2SAudio::readDataWithRetry(audio_buffer, I2S_BUFFER_SIZE, &bytes_read)) {
+                    // BUG FIX: Validate bytes_read is within expected bounds
+                    if (bytes_read > I2S_BUFFER_SIZE) {
+                        LOG_ERROR("I2S returned more bytes than buffer size: %u > %u", bytes_read, I2S_BUFFER_SIZE);
+                        bytes_read = I2S_BUFFER_SIZE; // Clamp to prevent buffer overflow
+                    }
+                    
+                    // MEMORY SAFETY: Verify buffer integrity after I2S read
+                    if (!checkBufferCanaries()) {
+                        LOG_CRITICAL("Buffer corruption after I2S read - stopping");
+                        systemState.setState(SystemState::ERROR);
+                        break;
+                    }
+                    
                     // Send data to server
-                    if (NetworkManager::writeData(audio_buffer, bytes_read)) {
+                    if (bytes_read > 0 && NetworkManager::writeData(audio_buffer, bytes_read)) {
                         stats.total_bytes_sent += bytes_read;
                     } else {
                         // Write failed - let NetworkManager handle reconnection

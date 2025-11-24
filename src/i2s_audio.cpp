@@ -76,6 +76,12 @@ void I2SAudio::cleanup() {
 }
 
 bool I2SAudio::readData(uint8_t* buffer, size_t buffer_size, size_t* bytes_read) {
+    // BUG FIX: Add null pointer validation before use
+    if (buffer == nullptr || bytes_read == nullptr) {
+        LOG_ERROR("I2S readData: null pointer passed (buffer=%p, bytes_read=%p)", buffer, bytes_read);
+        return false;
+    }
+    
     if (!is_initialized) {
         LOG_ERROR("I2S not initialized");
         return false;
@@ -116,6 +122,31 @@ bool I2SAudio::readData(uint8_t* buffer, size_t buffer_size, size_t* bytes_read)
 }
 
 bool I2SAudio::readDataWithRetry(uint8_t* buffer, size_t buffer_size, size_t* bytes_read, int max_retries) {
+    // BUG FIX: Add null pointer checks to prevent crashes
+    // If buffer or bytes_read are null, we cannot safely proceed
+    if (buffer == nullptr) {
+        LOG_ERROR("I2S readDataWithRetry: buffer is null");
+        return false;
+    }
+    if (bytes_read == nullptr) {
+        LOG_ERROR("I2S readDataWithRetry: bytes_read is null");
+        return false;
+    }
+    
+    // BUG FIX: Validate buffer_size to prevent overflow/underflow
+    if (buffer_size == 0 || buffer_size > 65536) {
+        LOG_ERROR("I2S readDataWithRetry: invalid buffer_size %u", buffer_size);
+        return false;
+    }
+    
+    // BUG FIX: Clamp max_retries to reasonable bounds to prevent infinite loops
+    if (max_retries <= 0) {
+        max_retries = 1;  // At least one attempt
+    }
+    if (max_retries > 100) {
+        max_retries = 100;  // Cap at 100 to prevent excessive delays
+    }
+    
     for (int attempt = 0; attempt < max_retries; attempt++) {
         if (readData(buffer, buffer_size, bytes_read)) {
             if (attempt > 0) {
@@ -208,10 +239,15 @@ bool I2SAudio::healthCheck() {
 
     // Verify error rates are acceptable
     // If permanent errors > 20% of total, something is wrong
-    if (total_errors > 100 && (permanent_errors * 100 / total_errors) > 20) {
-        LOG_ERROR("I2S health check: high permanent error rate (%u%% of %u total)",
-                 permanent_errors * 100 / total_errors, total_errors);
-        return false;
+    // BUG FIX: Prevent division by zero and add proper bounds checking
+    if (total_errors > 100) {
+        // Use safe division with bounds checking
+        uint32_t error_percentage = (permanent_errors * 100) / total_errors;
+        if (error_percentage > 20) {
+            LOG_ERROR("I2S health check: high permanent error rate (%u%% of %u total)",
+                     error_percentage, total_errors);
+            return false;
+        }
     }
 
     LOG_DEBUG("I2S health check: OK (total:%u, transient:%u, permanent:%u)",

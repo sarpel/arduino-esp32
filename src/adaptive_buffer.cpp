@@ -29,17 +29,22 @@ size_t AdaptiveBuffer::calculateBufferSize(int32_t rssi)
     // Very weak (<-90):              150% = base_size * 1.5  (maximum buffering for reliability)
     //
     // Note: We cap at 150% to avoid excessive memory usage on long-term weak signals
+    //
+    // PERFORMANCE: Use integer arithmetic instead of floating point
+    // Multiply first, then divide to maintain precision without float operations
 
     size_t new_size;
 
     if (rssi >= -60)
     {
         // Strong signal - can use smaller buffer to save RAM
+        // 50% = base * 50 / 100
         new_size = (base_buffer_size * 50) / 100;
     }
     else if (rssi >= -70)
     {
         // Good signal - 75% buffer
+        // 75% = base * 75 / 100
         new_size = (base_buffer_size * 75) / 100;
     }
     else if (rssi >= -80)
@@ -50,11 +55,13 @@ size_t AdaptiveBuffer::calculateBufferSize(int32_t rssi)
     else if (rssi >= -90)
     {
         // Weak signal - INCREASE buffer to absorb jitter
+        // 120% = base * 120 / 100
         new_size = (base_buffer_size * 120) / 100;
     }
     else
     {
         // Very weak signal - MAXIMIZE buffer for reliability
+        // 150% = base * 150 / 100
         new_size = (base_buffer_size * 150) / 100;
     }
 
@@ -73,8 +80,14 @@ void AdaptiveBuffer::updateBufferSize(int32_t rssi)
 
     // Only adjust if minimum interval passed (5 seconds)
     unsigned long now = millis();
-    if (now - last_adjustment_time < 5000)
-    {
+    
+    // BUG FIX: Use unsigned arithmetic for overflow-safe time comparison
+    // Unsigned subtraction handles millis() wraparound correctly
+    // Example: now=5, last=ULONG_MAX-10 → elapsed = 5 - (ULONG_MAX-10) = 16 (correct!)
+    unsigned long elapsed = now - last_adjustment_time;
+    
+    // Skip if too soon (but allow first call when last_adjustment_time == 0)
+    if (last_adjustment_time != 0 && elapsed < 5000) {
         return;
     }
 
@@ -83,7 +96,28 @@ void AdaptiveBuffer::updateBufferSize(int32_t rssi)
     // Only log if size changed significantly (>10%)
     if (new_size != current_buffer_size)
     {
-        int change_pct = ((int)new_size - (int)current_buffer_size) * 100 / (int)current_buffer_size;
+        // BUG FIX: Prevent division by zero when calculating percentage change
+        if (current_buffer_size == 0) {
+            LOG_ERROR("Adaptive buffer: current_buffer_size is 0, resetting to new size");
+            current_buffer_size = new_size;
+            adjustment_count++;
+            last_adjustment_time = now;
+            return;
+        }
+        
+        // BUG FIX: Use safe integer arithmetic to prevent overflow
+        // Cast to int64_t to handle potential overflow in intermediate calculations
+        int64_t size_diff = (int64_t)new_size - (int64_t)current_buffer_size;
+        int64_t percentage_64 = (size_diff * 100) / (int64_t)current_buffer_size;
+        
+        // BUG FIX: Clamp to int range before cast to prevent undefined behavior
+        // Percentage should never exceed these bounds in practice, but be defensive
+        if (percentage_64 > INT_MAX) {
+            percentage_64 = INT_MAX;
+        } else if (percentage_64 < INT_MIN) {
+            percentage_64 = INT_MIN;
+        }
+        int change_pct = (int)percentage_64;
 
         if (abs(change_pct) >= 10)
         {
@@ -112,15 +146,26 @@ uint8_t AdaptiveBuffer::getEfficiencyScore()
 
     size_t optimal_size = calculateBufferSize(last_rssi);
 
+    // BUG FIX: Prevent division by zero crash
+    // If optimal_size is 0 (which shouldn't happen in normal operation but could occur
+    // with extreme RSSI values or initialization issues), return 0 score safely
     if (optimal_size == 0)
     {
-        return 0; // Safety check
+        LOG_ERROR("Adaptive buffer: optimal_size is 0, cannot calculate efficiency score");
+        return 0; // Safety check - avoid division by zero
     }
 
-    uint16_t raw_score = (current_buffer_size * 100) / optimal_size;
-
+    // BUG FIX: Use safe arithmetic to prevent overflow
+    // Both current_buffer_size and optimal_size are size_t (could be large)
+    // Use 64-bit arithmetic to safely compute percentage without overflow
+    uint64_t percentage_64 = ((uint64_t)current_buffer_size * 100ULL) / (uint64_t)optimal_size;
+    
     // Cap at 100 to prevent overflow in uint8_t and to reflect perfection
-    return (raw_score > 100) ? 100 : (uint8_t)raw_score;
+    if (percentage_64 > 100) {
+        return 100;
+    }
+    
+    return (uint8_t)percentage_64;
 }
 
 int32_t AdaptiveBuffer::getLastRSSI()

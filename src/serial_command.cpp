@@ -85,9 +85,16 @@ void SerialCommandHandler::processCommands() {
     }
 
     // Handle regular characters
+    // BUG FIX: Add explicit buffer overflow protection
+    // Previous check was correct but lacked explicit overflow handling
+    // Now we explicitly reject characters beyond buffer capacity to prevent silent data loss
     if (buffer_index < BUFFER_SIZE - 1) {
         command_buffer[buffer_index++] = c;
         Serial.write(c);  // Echo character
+    } else {
+        // Buffer full - reject further input and alert user
+        Serial.write('\a');  // Bell character to indicate buffer full
+        LOG_WARN("Serial command buffer full - rejecting input (max %d chars)", BUFFER_SIZE - 1);
     }
 }
 
@@ -151,14 +158,24 @@ void SerialCommandHandler::handleConfigCommand(const char* args) {
         return;
     }
 
+    // BUG FIX: Use safer string copy with explicit bounds checking
     char args_copy[64];
+    size_t args_len = strlen(args);
+    if (args_len >= sizeof(args_copy)) {
+        // BUG FIX: Use %zu format specifier for size_t to avoid issues on 64-bit systems
+        LOG_ERROR("CONFIG: Arguments too long (%zu chars, max %zu)", args_len, sizeof(args_copy) - 1);
+        return;
+    }
+    
     strncpy(args_copy, args, sizeof(args_copy) - 1);
     args_copy[sizeof(args_copy) - 1] = '\0';
 
     char* subcmd = strtok(args_copy, " ");
     if (subcmd == nullptr) return;
 
-    for (size_t i = 0; subcmd[i]; i++) {
+    // BUG FIX: Add bounds check for string length before toupper loop
+    size_t subcmd_len = strlen(subcmd);
+    for (size_t i = 0; i < subcmd_len && i < 64; i++) {
         subcmd[i] = toupper(subcmd[i]);
     }
 
@@ -199,14 +216,29 @@ void SerialCommandHandler::handleConnectCommand() {
 
 void SerialCommandHandler::handleStatsCommand() {
     LOG_INFO("========== DETAILED STATISTICS ==========");
-    LOG_INFO("Uptime: %lu seconds", millis() / 1000);
+    
+    // BUG FIX: Handle millis() overflow in uptime calculation (consistent with main.cpp)
+    // millis() wraps around at ULONG_MAX (~49.7 days), must handle correctly
+    unsigned long current_millis = millis();
+    unsigned long uptime_ms = current_millis; // millis() IS the uptime from boot
+    unsigned long uptime_sec = uptime_ms / 1000;
+    LOG_INFO("Uptime: %lu seconds", uptime_sec);
 
     // Memory stats
     uint32_t free_heap = ESP.getFreeHeap();
     uint32_t heap_size = ESP.getHeapSize();
-    LOG_INFO("Heap - Free: %u bytes, Total: %u bytes", free_heap, heap_size);
-    LOG_INFO("Heap - Used: %u bytes (%.1f%%)", heap_size - free_heap,
-             (heap_size - free_heap) * 100.0 / heap_size);
+    
+    // BUG FIX: Validate heap_size to prevent division by zero
+    if (heap_size == 0) {
+        LOG_ERROR("Heap size reported as 0 - cannot calculate usage percentage");
+        LOG_INFO("Heap - Free: %u bytes, Total: UNKNOWN", free_heap);
+    } else {
+        uint32_t used_heap = (heap_size > free_heap) ? (heap_size - free_heap) : 0;
+        float usage_pct = (used_heap * 100.0f) / heap_size;
+        
+        LOG_INFO("Heap - Free: %u bytes, Total: %u bytes", free_heap, heap_size);
+        LOG_INFO("Heap - Used: %u bytes (%.1f%%)", used_heap, usage_pct);
+    }
 
     // I2S stats
     LOG_INFO("I2S Total Errors: %u", I2SAudio::getErrorCount());

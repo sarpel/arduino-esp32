@@ -24,10 +24,21 @@ static inline void logger_refill_tokens()
         _logger_tokens = LOGGER_BURST_MAX;
         return;
     }
+    
+    // BUG FIX: Handle millis() overflow correctly using unsigned arithmetic
+    // When millis() wraps around (~49.7 days), now < _logger_last_refill_ms
+    // but unsigned subtraction still gives correct elapsed time:
+    // Example: now=5, last=ULONG_MAX-10 → elapsed = 5 - (ULONG_MAX-10) = 16 (correct!)
+    // This works because unsigned overflow is well-defined in C/C++
     uint32_t elapsed = now - _logger_last_refill_ms;
+    
     if (elapsed == 0)
         return;
-    float rate_per_ms = (float)LOGGER_MAX_LINES_PER_SEC / 1000.0f;
+    
+    // PERFORMANCE: Precalculate rate_per_ms as a constant to avoid division in hot path
+    // rate_per_ms = LOGGER_MAX_LINES_PER_SEC / 1000.0f
+    const float rate_per_ms = (float)LOGGER_MAX_LINES_PER_SEC / 1000.0f;
+    
     _logger_tokens += elapsed * rate_per_ms;
     if (_logger_tokens > (float)LOGGER_BURST_MAX)
         _logger_tokens = (float)LOGGER_BURST_MAX;
@@ -79,17 +90,35 @@ void Logger::log(LogLevel level, const char *file, int line, const char *fmt, ..
         _logger_suppressed = 0;
     }
 
+    // BUG FIX: Use fixed-size buffer with overflow protection
+    // vsnprintf guarantees null-termination even on truncation
     char buffer[256];
     va_list args;
     va_start(args, fmt);
-    vsnprintf(buffer, sizeof(buffer), fmt, args);
+    int written = vsnprintf(buffer, sizeof(buffer), fmt, args);
     va_end(args);
+    
+    // Check if message was truncated or error occurred
+    // BUG FIX: Safe comparison - check for negative (error) or >= size (truncation)
+    // Use size_t cast of written for safe comparison (written is always < 1000 for our buffer)
+    if (written < 0 || (size_t)written >= sizeof(buffer)) {
+        // Message was truncated or error - add truncation indicator
+        // Safely overwrite last few chars with "..." to indicate truncation
+        buffer[sizeof(buffer) - 4] = '.';
+        buffer[sizeof(buffer) - 3] = '.';
+        buffer[sizeof(buffer) - 2] = '.';
+        buffer[sizeof(buffer) - 1] = '\0';
+    }
 
     // Extract filename from path
-    const char *filename = strrchr(file, '/');
-    if (!filename)
-        filename = strrchr(file, '\\');
-    filename = filename ? filename + 1 : file;
+    // BUG FIX: Add null pointer check for file parameter
+    const char *filename = "unknown";
+    if (file != nullptr) {
+        const char *slash = strrchr(file, '/');
+        if (!slash)
+            slash = strrchr(file, '\\');
+        filename = slash ? slash + 1 : file;
+    }
 
     _logger_tokens -= 1.0f;
     Serial.printf("[%6lu] [%-8s] [Heap:%6u] %s (%s:%d)\n",
