@@ -90,11 +90,31 @@ ExponentialBackoff::ExponentialBackoff(unsigned long min_ms, unsigned long max_m
 
 unsigned long ExponentialBackoff::getNextDelay()
 {
+    // BUG FIX: Prevent integer overflow in exponential growth
+    // When consecutive_failures is very large, current_delay * 2 could overflow
+    // Cap the multiplication to prevent wraparound
+    
     if (consecutive_failures > 0)
     {
-        current_delay = min(current_delay * 2, max_delay);
+        // Check if doubling would overflow before doing it
+        if (current_delay > (max_delay / 2)) {
+            // Already near max, just set to max
+            current_delay = max_delay;
+        } else {
+            // Safe to double
+            unsigned long doubled = current_delay * 2;
+            current_delay = min(doubled, max_delay);
+        }
     }
+    
     consecutive_failures++;
+    
+    // BUG FIX: Prevent consecutive_failures from overflowing
+    // Cap at a reasonable maximum to prevent wraparound
+    if (consecutive_failures > 1000) {
+        consecutive_failures = 1000;
+    }
+    
     // Apply jitter to avoid sync storms
     return apply_jitter(current_delay);
 }
@@ -201,10 +221,19 @@ void NetworkManager::handleWiFiConnection()
 
     if (wifi_retry_count > WIFI_MAX_RETRIES)
     {
-        // Enter safe backoff mode instead of rebooting; keep serial alive
-        unsigned long backoff = 1000UL * (wifi_retry_count - WIFI_MAX_RETRIES);
-        if (backoff > 30000UL)
+        // BUG FIX: Prevent integer overflow in backoff calculation
+        // Previous code could overflow if retry_count becomes very large
+        // Cap retry_count to prevent unbounded growth
+        int retry_overflow_safe = wifi_retry_count - WIFI_MAX_RETRIES;
+        if (retry_overflow_safe > 30) {
+            retry_overflow_safe = 30; // Cap to prevent overflow (30 seconds max)
+        }
+        
+        unsigned long backoff = 1000UL * (unsigned long)retry_overflow_safe;
+        if (backoff > 30000UL) {
             backoff = 30000UL;
+        }
+        
         // Add small jitter to avoid herd reconnects
         backoff = apply_jitter(backoff);
         LOG_CRITICAL("WiFi connection failed after %d attempts - backing off %lu ms (no reboot)", WIFI_MAX_RETRIES, backoff);
@@ -495,8 +524,18 @@ void NetworkManager::handleTCPError(const char *error_source)
 
 bool NetworkManager::validateConnection()
 {
-    // Validate that connection state matches actual TCP connection
-    bool is_actually_connected = client.connected();
+    // BUG FIX: Add protection against client object being in invalid state
+    // WiFiClient::connected() can throw or return inconsistent results if the
+    // underlying socket is corrupted. Wrap in try-catch for safety.
+    
+    bool is_actually_connected = false;
+    try {
+        is_actually_connected = client.connected();
+    } catch (...) {
+        LOG_ERROR("Exception caught while checking client.connected() - assuming disconnected");
+        is_actually_connected = false;
+    }
+    
     bool state_says_connected = (tcp_state == TCPConnectionState::CONNECTED);
 
     if (state_says_connected && !is_actually_connected)

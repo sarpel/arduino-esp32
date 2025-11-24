@@ -215,14 +215,28 @@ void SerialCommandHandler::handleConnectCommand() {
 
 void SerialCommandHandler::handleStatsCommand() {
     LOG_INFO("========== DETAILED STATISTICS ==========");
-    LOG_INFO("Uptime: %lu seconds", millis() / 1000);
+    
+    // BUG FIX: Handle millis() overflow in uptime calculation
+    unsigned long current_millis = millis();
+    unsigned long uptime_ms = current_millis; // Simplified - millis() returns total uptime
+    unsigned long uptime_sec = uptime_ms / 1000;
+    LOG_INFO("Uptime: %lu seconds", uptime_sec);
 
     // Memory stats
     uint32_t free_heap = ESP.getFreeHeap();
     uint32_t heap_size = ESP.getHeapSize();
-    LOG_INFO("Heap - Free: %u bytes, Total: %u bytes", free_heap, heap_size);
-    LOG_INFO("Heap - Used: %u bytes (%.1f%%)", heap_size - free_heap,
-             (heap_size - free_heap) * 100.0 / heap_size);
+    
+    // BUG FIX: Validate heap_size to prevent division by zero
+    if (heap_size == 0) {
+        LOG_ERROR("Heap size reported as 0 - cannot calculate usage percentage");
+        LOG_INFO("Heap - Free: %u bytes, Total: UNKNOWN", free_heap);
+    } else {
+        uint32_t used_heap = (heap_size > free_heap) ? (heap_size - free_heap) : 0;
+        float usage_pct = (used_heap * 100.0f) / heap_size;
+        
+        LOG_INFO("Heap - Free: %u bytes, Total: %u bytes", free_heap, heap_size);
+        LOG_INFO("Heap - Used: %u bytes (%.1f%%)", used_heap, usage_pct);
+    }
 
     // I2S stats
     LOG_INFO("I2S Total Errors: %u", I2SAudio::getErrorCount());

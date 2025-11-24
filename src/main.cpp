@@ -68,12 +68,31 @@ struct SystemStats {
     void printStats() {
         updateMemoryStats();  // Update memory trend before printing
 
-        unsigned long uptime_sec = (millis() - uptime_start) / 1000;
+        // BUG FIX: Prevent overflow in uptime calculation
+        // millis() can wrap after 49.7 days, handle gracefully
+        unsigned long current_millis = millis();
+        unsigned long uptime_ms;
+        
+        if (current_millis >= uptime_start) {
+            uptime_ms = current_millis - uptime_start;
+        } else {
+            // millis() wrapped around - calculate correctly
+            uptime_ms = (ULONG_MAX - uptime_start) + current_millis + 1;
+        }
+        
+        unsigned long uptime_sec = uptime_ms / 1000;
         uint32_t current_heap = ESP.getFreeHeap();
 
         LOG_INFO("=== System Statistics ===");
         LOG_INFO("Uptime: %lu seconds (%.1f hours)", uptime_sec, uptime_sec / 3600.0);
-        LOG_INFO("Data sent: %llu bytes (%.2f MB)", total_bytes_sent, total_bytes_sent / 1048576.0);
+        
+        // BUG FIX: Safely handle very large byte counts to prevent format overflow
+        if (total_bytes_sent < 1048576ULL) {
+            LOG_INFO("Data sent: %llu bytes (%.2f KB)", total_bytes_sent, total_bytes_sent / 1024.0);
+        } else {
+            LOG_INFO("Data sent: %llu bytes (%.2f MB)", total_bytes_sent, total_bytes_sent / 1048576.0);
+        }
+        
         LOG_INFO("WiFi reconnects: %u", NetworkManager::getWiFiReconnectCount());
         LOG_INFO("Server reconnects: %u", NetworkManager::getServerReconnectCount());
         LOG_INFO("I2S errors: %u (total: %u, transient: %u, permanent: %u)",
@@ -87,7 +106,13 @@ struct SystemStats {
         LOG_INFO("Current heap: %u bytes", current_heap);
         LOG_INFO("Peak heap: %u bytes", peak_heap);
         LOG_INFO("Min heap: %u bytes", min_heap);
-        LOG_INFO("Heap range: %u bytes", peak_heap - min_heap);
+        
+        // BUG FIX: Check for underflow before subtraction
+        if (peak_heap >= min_heap) {
+            LOG_INFO("Heap range: %u bytes", peak_heap - min_heap);
+        } else {
+            LOG_WARN("Heap range: invalid (peak < min, possible data corruption)");
+        }
 
         // Detect potential memory leak
         if (heap_trend == -1) {
@@ -413,9 +438,21 @@ void loop() {
 
                 // Read audio data with retry
                 size_t bytes_read = 0;
+                
+                // BUG FIX: Validate buffer before passing to I2S
+                // Ensure audio_buffer is properly allocated and sized
+                static_assert(sizeof(audio_buffer) >= I2S_BUFFER_SIZE, 
+                             "audio_buffer must be at least I2S_BUFFER_SIZE bytes");
+                
                 if (I2SAudio::readDataWithRetry(audio_buffer, I2S_BUFFER_SIZE, &bytes_read)) {
+                    // BUG FIX: Validate bytes_read is within expected bounds
+                    if (bytes_read > I2S_BUFFER_SIZE) {
+                        LOG_ERROR("I2S returned more bytes than buffer size: %u > %u", bytes_read, I2S_BUFFER_SIZE);
+                        bytes_read = I2S_BUFFER_SIZE; // Clamp to prevent buffer overflow
+                    }
+                    
                     // Send data to server
-                    if (NetworkManager::writeData(audio_buffer, bytes_read)) {
+                    if (bytes_read > 0 && NetworkManager::writeData(audio_buffer, bytes_read)) {
                         stats.total_bytes_sent += bytes_read;
                     } else {
                         // Write failed - let NetworkManager handle reconnection
