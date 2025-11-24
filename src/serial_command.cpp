@@ -85,9 +85,16 @@ void SerialCommandHandler::processCommands() {
     }
 
     // Handle regular characters
+    // BUG FIX: Add explicit buffer overflow protection
+    // Previous check was correct but lacked explicit overflow handling
+    // Now we explicitly reject characters beyond buffer capacity to prevent silent data loss
     if (buffer_index < BUFFER_SIZE - 1) {
         command_buffer[buffer_index++] = c;
         Serial.write(c);  // Echo character
+    } else {
+        // Buffer full - reject further input and alert user
+        Serial.write('\a');  // Bell character to indicate buffer full
+        LOG_WARN("Serial command buffer full - rejecting input (max %d chars)", BUFFER_SIZE - 1);
     }
 }
 
@@ -151,14 +158,23 @@ void SerialCommandHandler::handleConfigCommand(const char* args) {
         return;
     }
 
+    // BUG FIX: Use safer string copy with explicit bounds checking
     char args_copy[64];
+    size_t args_len = strlen(args);
+    if (args_len >= sizeof(args_copy)) {
+        LOG_ERROR("CONFIG: Arguments too long (%u chars, max %u)", args_len, sizeof(args_copy) - 1);
+        return;
+    }
+    
     strncpy(args_copy, args, sizeof(args_copy) - 1);
     args_copy[sizeof(args_copy) - 1] = '\0';
 
     char* subcmd = strtok(args_copy, " ");
     if (subcmd == nullptr) return;
 
-    for (size_t i = 0; subcmd[i]; i++) {
+    // BUG FIX: Add bounds check for string length before toupper loop
+    size_t subcmd_len = strlen(subcmd);
+    for (size_t i = 0; i < subcmd_len && i < 64; i++) {
         subcmd[i] = toupper(subcmd[i]);
     }
 

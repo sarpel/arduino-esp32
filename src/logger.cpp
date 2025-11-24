@@ -79,17 +79,33 @@ void Logger::log(LogLevel level, const char *file, int line, const char *fmt, ..
         _logger_suppressed = 0;
     }
 
+    // BUG FIX: Use fixed-size buffer with overflow protection
+    // vsnprintf guarantees null-termination even on truncation
     char buffer[256];
     va_list args;
     va_start(args, fmt);
-    vsnprintf(buffer, sizeof(buffer), fmt, args);
+    int written = vsnprintf(buffer, sizeof(buffer), fmt, args);
     va_end(args);
+    
+    // Check if message was truncated (written >= buffer size)
+    if (written >= (int)sizeof(buffer)) {
+        // Message was truncated - add truncation indicator
+        // Safely overwrite last few chars with "..." to indicate truncation
+        buffer[sizeof(buffer) - 4] = '.';
+        buffer[sizeof(buffer) - 3] = '.';
+        buffer[sizeof(buffer) - 2] = '.';
+        buffer[sizeof(buffer) - 1] = '\0';
+    }
 
     // Extract filename from path
-    const char *filename = strrchr(file, '/');
-    if (!filename)
-        filename = strrchr(file, '\\');
-    filename = filename ? filename + 1 : file;
+    // BUG FIX: Add null pointer check for file parameter
+    const char *filename = "unknown";
+    if (file != nullptr) {
+        const char *slash = strrchr(file, '/');
+        if (!slash)
+            slash = strrchr(file, '\\');
+        filename = slash ? slash + 1 : file;
+    }
 
     _logger_tokens -= 1.0f;
     Serial.printf("[%6lu] [%-8s] [Heap:%6u] %s (%s:%d)\n",

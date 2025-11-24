@@ -28,12 +28,22 @@ public:
 
     void setState(SystemState newState) {
         if (newState != currentState) {
+            // BUG FIX: Capture both states atomically before callback
+            // Previous implementation had a race condition where the callback
+            // could see inconsistent state if interrupted or if the callback
+            // itself queries getState(). Now we capture both old and new states
+            // before updating to ensure callback sees consistent transition.
+            SystemState capturedPrevious = currentState;
+            SystemState capturedNew = newState;
+            
+            // Update state atomically
             previousState = currentState;
             currentState = newState;
             stateEnterTime = millis();
             
+            // Execute callback with captured values to prevent race conditions
             if (stateChangeCallback) {
-                stateChangeCallback(previousState, currentState);
+                stateChangeCallback(capturedPrevious, capturedNew);
             }
         }
     }

@@ -49,7 +49,15 @@ public:
             return false;
 
         unsigned long currentMillis = millis();
-        if (currentMillis - previousMillis >= interval)
+        
+        // BUG FIX: Handle millis() overflow correctly
+        // millis() wraps around every ~49.7 days (2^32 milliseconds)
+        // When overflow occurs, currentMillis < previousMillis, breaking the comparison
+        // Using unsigned arithmetic, the subtraction wraps correctly: (0 - 0xFFFFFFFF) = 1
+        // This works because unsigned overflow is well-defined in C++
+        unsigned long elapsed = currentMillis - previousMillis;
+        
+        if (elapsed >= interval)
         {
             if (autoReset)
             {

@@ -118,10 +118,15 @@ void checkMemoryHealth() {
     if (free_heap < MEMORY_CRITICAL_THRESHOLD) {
         LOG_CRITICAL("Critical low memory: %u bytes - system may crash", free_heap);
         // Consider restarting if critically low
-        if (free_heap < MEMORY_CRITICAL_THRESHOLD / 2) {
-            LOG_CRITICAL("Memory critically low - initiating graceful restart");
+        // BUG FIX: Add additional validation before restart to prevent restart loops
+        // Only restart if we've been running for at least 5 minutes (300 seconds)
+        unsigned long uptime_sec = (millis() - stats.uptime_start) / 1000;
+        if (free_heap < MEMORY_CRITICAL_THRESHOLD / 2 && uptime_sec > 300) {
+            LOG_CRITICAL("Memory critically low - initiating graceful restart (uptime: %lu sec)", uptime_sec);
             gracefulShutdown();
             ESP.restart();
+        } else if (free_heap < MEMORY_CRITICAL_THRESHOLD / 2) {
+            LOG_CRITICAL("Memory critically low but uptime too short (%lu sec) - avoiding restart loop", uptime_sec);
         }
     } else if (free_heap < MEMORY_WARN_THRESHOLD) {
         LOG_WARN("Memory low: %u bytes", free_heap);

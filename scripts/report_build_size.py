@@ -22,6 +22,10 @@ class Colors:
 
 def format_size(bytes_size):
     """Format bytes to human-readable size"""
+    # BUG FIX: Handle negative or invalid byte sizes
+    if bytes_size < 0:
+        return "Invalid size"
+    
     for unit in ['B', 'KB', 'MB']:
         if bytes_size < 1024.0:
             return f"{bytes_size:.2f} {unit}"
@@ -63,6 +67,11 @@ def find_build_artifacts(project_root):
 
 def analyze_elf_sections(elf_path):
     """Analyze ELF file sections using size command"""
+    # BUG FIX: Add validation for elf_path parameter
+    if not elf_path or not Path(elf_path).exists():
+        LOG.warning(f"ELF file does not exist: {elf_path}")
+        return {}
+    
     try:
         import subprocess
         result = subprocess.run(
@@ -88,11 +97,19 @@ def analyze_elf_sections(elf_path):
                 section_name = parts[0]
                 try:
                     section_size = int(parts[1])
+                    # BUG FIX: Validate section size to prevent negative values
+                    if section_size < 0:
+                        print(f"{Colors.WARNING}Warning: Negative section size for {section_name}: {section_size}{Colors.ENDC}")
+                        continue
                     sections[section_name] = section_size
                 except ValueError:
                     continue
 
         return sections
+    except subprocess.TimeoutExpired:
+        # BUG FIX: Handle timeout explicitly
+        print(f"{Colors.WARNING}Warning: Command timeout while analyzing ELF sections{Colors.ENDC}")
+        return {}
     except Exception as e:
         print(f"{Colors.WARNING}Warning: Could not analyze ELF sections: {e}{Colors.ENDC}")
         return {}

@@ -73,7 +73,11 @@ void AdaptiveBuffer::updateBufferSize(int32_t rssi)
 
     // Only adjust if minimum interval passed (5 seconds)
     unsigned long now = millis();
-    if (now - last_adjustment_time < 5000)
+    
+    // BUG FIX: Handle millis() overflow (occurs every ~49.7 days)
+    // When millis() wraps around, the subtraction will be incorrect
+    // Use proper overflow-safe comparison
+    if (last_adjustment_time != 0 && (now - last_adjustment_time < 5000) && (now >= last_adjustment_time))
     {
         return;
     }
@@ -83,7 +87,19 @@ void AdaptiveBuffer::updateBufferSize(int32_t rssi)
     // Only log if size changed significantly (>10%)
     if (new_size != current_buffer_size)
     {
-        int change_pct = ((int)new_size - (int)current_buffer_size) * 100 / (int)current_buffer_size;
+        // BUG FIX: Prevent division by zero when calculating percentage change
+        if (current_buffer_size == 0) {
+            LOG_ERROR("Adaptive buffer: current_buffer_size is 0, resetting to new size");
+            current_buffer_size = new_size;
+            adjustment_count++;
+            last_adjustment_time = now;
+            return;
+        }
+        
+        // BUG FIX: Use safe integer arithmetic to prevent overflow
+        // Cast to int64_t to handle potential overflow in intermediate calculations
+        int64_t size_diff = (int64_t)new_size - (int64_t)current_buffer_size;
+        int change_pct = (int)((size_diff * 100) / (int64_t)current_buffer_size);
 
         if (abs(change_pct) >= 10)
         {
@@ -112,12 +128,25 @@ uint8_t AdaptiveBuffer::getEfficiencyScore()
 
     size_t optimal_size = calculateBufferSize(last_rssi);
 
+    // BUG FIX: Prevent division by zero crash
+    // If optimal_size is 0 (which shouldn't happen in normal operation but could occur
+    // with extreme RSSI values or initialization issues), return 0 score safely
     if (optimal_size == 0)
     {
-        return 0; // Safety check
+        LOG_ERROR("Adaptive buffer: optimal_size is 0, cannot calculate efficiency score");
+        return 0; // Safety check - avoid division by zero
     }
 
-    uint16_t raw_score = (current_buffer_size * 100) / optimal_size;
+    // BUG FIX: Prevent overflow in multiplication before division
+    // Use 32-bit arithmetic safely by checking bounds first
+    if (current_buffer_size > (UINT16_MAX / 100)) {
+        // For very large buffers, calculate differently to prevent overflow
+        uint16_t ratio = (current_buffer_size / optimal_size);
+        uint16_t raw_score = ratio * 100;
+        return (raw_score > 100) ? 100 : (uint8_t)raw_score;
+    }
+
+    uint16_t raw_score = (uint16_t)((current_buffer_size * 100) / optimal_size);
 
     // Cap at 100 to prevent overflow in uint8_t and to reflect perfection
     return (raw_score > 100) ? 100 : (uint8_t)raw_score;

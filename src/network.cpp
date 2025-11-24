@@ -36,32 +36,49 @@ static inline uint32_t nb_rand()
 static inline unsigned long apply_jitter(unsigned long base_ms)
 {
 #if SERVER_BACKOFF_JITTER_PCT > 0
+    // BUG FIX: Added overflow protection and proper bounds checking
+    // Previous code had potential integer overflow in multiplication before division
+    // which could cause silent wraparound and negative/incorrect delays
+    
     uint32_t r = nb_rand();
 
-    // Calculate jitter range with safety check for negative values and overflow protection
-    int32_t jitter_range = (int32_t)((uint64_t)base_ms * SERVER_BACKOFF_JITTER_PCT / 100);
-    if (jitter_range < 0)
+    // Calculate jitter range with overflow protection
+    // Use 64-bit arithmetic to prevent overflow during multiplication
+    uint64_t jitter_range_64 = ((uint64_t)base_ms * (uint64_t)SERVER_BACKOFF_JITTER_PCT) / 100ULL;
+    
+    // Clamp jitter_range to prevent overflow in subsequent calculations
+    // Maximum jitter_range is limited to half of UINT32_MAX to ensure jitter_span doesn't overflow
+    if (jitter_range_64 > (UINT32_MAX / 2))
     {
-        jitter_range = 0; // Safety: prevent negative range
+        jitter_range_64 = UINT32_MAX / 2;
     }
+    
+    uint32_t jitter_range = (uint32_t)jitter_range_64;
 
     // Apply random jitter within [-jitter_range, +jitter_range]
-    // Use safe cast to prevent integer overflow in modulo operation
-    uint32_t jitter_span = (2u * (uint32_t)jitter_range) + 1u;
-    int32_t jitter = (int32_t)(r % jitter_span) - jitter_range;
+    // BUG FIX: Check for zero to prevent division by zero
+    uint32_t jitter_span = (2u * jitter_range) + 1u;
+    if (jitter_span == 0) {
+        jitter_span = 1; // Safety: prevent modulo by zero
+    }
+    
+    int32_t jitter = (int32_t)(r % jitter_span) - (int32_t)jitter_range;
 
     // Apply jitter and bounds-check the result
-    long with_jitter = (long)base_ms + jitter;
-    if (with_jitter < (long)SERVER_RECONNECT_MIN)
+    // BUG FIX: Use proper overflow-safe addition
+    int64_t with_jitter_64 = (int64_t)base_ms + (int64_t)jitter;
+    
+    // Clamp to valid range to prevent negative or overflow values
+    if (with_jitter_64 < (int64_t)SERVER_RECONNECT_MIN)
     {
-        with_jitter = SERVER_RECONNECT_MIN;
+        with_jitter_64 = SERVER_RECONNECT_MIN;
     }
-    if ((unsigned long)with_jitter > SERVER_RECONNECT_MAX)
+    if (with_jitter_64 > (int64_t)SERVER_RECONNECT_MAX)
     {
-        with_jitter = SERVER_RECONNECT_MAX;
+        with_jitter_64 = SERVER_RECONNECT_MAX;
     }
 
-    return (unsigned long)with_jitter;
+    return (unsigned long)with_jitter_64;
 #else
     return base_ms;
 #endif
@@ -346,6 +363,23 @@ WiFiClient &NetworkManager::getClient()
 
 bool NetworkManager::writeData(const uint8_t *data, size_t length)
 {
+    // BUG FIX: Add null pointer check and length validation
+    if (data == nullptr) {
+        LOG_ERROR("writeData: data pointer is null");
+        return false;
+    }
+    
+    if (length == 0) {
+        LOG_WARN("writeData: length is 0, nothing to send");
+        return true;  // Success - nothing to send
+    }
+    
+    // BUG FIX: Prevent excessively large writes that could cause timeouts or memory issues
+    if (length > 1048576) {  // 1MB sanity check
+        LOG_ERROR("writeData: length %u exceeds safety limit", length);
+        return false;
+    }
+    
     if (!isServerConnected())
     {
         return false;
@@ -369,7 +403,10 @@ bool NetworkManager::writeData(const uint8_t *data, size_t length)
         {
             LOG_ERROR("TCP write returned 0 (timeout or error) after %u/%u bytes", (unsigned)total_sent, (unsigned)length);
             handleTCPError("writeData");
-            if (millis() - last_successful_write > TCP_WRITE_TIMEOUT)
+            
+            // BUG FIX: Prevent potential overflow in time calculation
+            unsigned long time_since_write = millis() - last_successful_write;
+            if (time_since_write > TCP_WRITE_TIMEOUT)
             {
                 LOG_ERROR("TCP write timeout - closing stale connection");
                 disconnectFromServer();

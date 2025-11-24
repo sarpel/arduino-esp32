@@ -65,7 +65,7 @@ public:
 private:
     /**
      * Validate WiFi configuration
-     * Checks: SSID and password not empty
+     * Checks: SSID and password not empty or placeholder values
      */
     static bool validateWiFiConfig() {
         bool valid = true;
@@ -76,6 +76,10 @@ private:
         if (strlen(WIFI_SSID) == 0) {
             LOG_ERROR("WiFi SSID is empty - must configure WIFI_SSID in config.h");
             valid = false;
+        } else if (strcmp(WIFI_SSID, "YOUR_WIFI_SSID") == 0) {
+            // BUG FIX: Detect unconfigured placeholder values
+            LOG_ERROR("WiFi SSID is still set to placeholder 'YOUR_WIFI_SSID' - must configure real SSID in config.h");
+            valid = false;
         } else {
             LOG_INFO("  ✓ WiFi SSID configured");
         }
@@ -83,6 +87,10 @@ private:
         // Check password
         if (strlen(WIFI_PASSWORD) == 0) {
             LOG_ERROR("WiFi password is empty - must configure WIFI_PASSWORD in config.h");
+            valid = false;
+        } else if (strcmp(WIFI_PASSWORD, "YOUR_WIFI_PASSWORD") == 0) {
+            // BUG FIX: Detect unconfigured placeholder values
+            LOG_ERROR("WiFi password is still set to placeholder 'YOUR_WIFI_PASSWORD' - must configure real password in config.h");
             valid = false;
         } else {
             LOG_INFO("  ✓ WiFi password configured");
@@ -112,7 +120,7 @@ private:
 
     /**
      * Validate server configuration
-     * Checks: HOST and PORT not empty, valid port number
+     * Checks: HOST and PORT not empty or placeholder, valid port number
      */
     static bool validateServerConfig() {
         bool valid = true;
@@ -122,6 +130,10 @@ private:
         // Check HOST
         if (strlen(SERVER_HOST) == 0) {
             LOG_ERROR("Server HOST is empty - must configure SERVER_HOST in config.h");
+            valid = false;
+        } else if (strcmp(SERVER_HOST, "YOUR_SERVER_IP") == 0) {
+            // BUG FIX: Detect unconfigured placeholder values
+            LOG_ERROR("Server HOST is still set to placeholder 'YOUR_SERVER_IP' - must configure real IP in config.h");
             valid = false;
         } else {
             LOG_INFO("  ✓ Server HOST configured: %s", SERVER_HOST);
