@@ -29,17 +29,22 @@ size_t AdaptiveBuffer::calculateBufferSize(int32_t rssi)
     // Very weak (<-90):              150% = base_size * 1.5  (maximum buffering for reliability)
     //
     // Note: We cap at 150% to avoid excessive memory usage on long-term weak signals
+    //
+    // PERFORMANCE: Use integer arithmetic instead of floating point
+    // Multiply first, then divide to maintain precision without float operations
 
     size_t new_size;
 
     if (rssi >= -60)
     {
         // Strong signal - can use smaller buffer to save RAM
+        // 50% = base * 50 / 100
         new_size = (base_buffer_size * 50) / 100;
     }
     else if (rssi >= -70)
     {
         // Good signal - 75% buffer
+        // 75% = base * 75 / 100
         new_size = (base_buffer_size * 75) / 100;
     }
     else if (rssi >= -80)
@@ -50,11 +55,13 @@ size_t AdaptiveBuffer::calculateBufferSize(int32_t rssi)
     else if (rssi >= -90)
     {
         // Weak signal - INCREASE buffer to absorb jitter
+        // 120% = base * 120 / 100
         new_size = (base_buffer_size * 120) / 100;
     }
     else
     {
         // Very weak signal - MAXIMIZE buffer for reliability
+        // 150% = base * 150 / 100
         new_size = (base_buffer_size * 150) / 100;
     }
 

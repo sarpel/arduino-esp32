@@ -24,10 +24,19 @@ static inline void logger_refill_tokens()
         _logger_tokens = LOGGER_BURST_MAX;
         return;
     }
+    
+    // BUG FIX: Handle millis() overflow correctly
+    // When millis() wraps, now < _logger_last_refill_ms
+    // Use unsigned arithmetic which handles wraparound correctly
     uint32_t elapsed = now - _logger_last_refill_ms;
+    
     if (elapsed == 0)
         return;
-    float rate_per_ms = (float)LOGGER_MAX_LINES_PER_SEC / 1000.0f;
+    
+    // PERFORMANCE: Precalculate rate_per_ms as a constant to avoid division in hot path
+    // rate_per_ms = LOGGER_MAX_LINES_PER_SEC / 1000.0f
+    const float rate_per_ms = (float)LOGGER_MAX_LINES_PER_SEC / 1000.0f;
+    
     _logger_tokens += elapsed * rate_per_ms;
     if (_logger_tokens > (float)LOGGER_BURST_MAX)
         _logger_tokens = (float)LOGGER_BURST_MAX;

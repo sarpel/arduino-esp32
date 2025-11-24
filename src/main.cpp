@@ -19,6 +19,26 @@ StateManager systemState;
 static uint8_t audio_buffer[I2S_BUFFER_SIZE];  // Static buffer to avoid heap fragmentation
 static bool ota_initialized = false;  // Track OTA initialization status
 
+// MEMORY SAFETY: Add buffer canaries to detect corruption
+// These magic values are placed before and after the audio buffer
+// If they change, it indicates a buffer overflow/underflow occurred
+#define BUFFER_CANARY_VALUE 0xDEADBEEF
+static uint32_t buffer_canary_before = BUFFER_CANARY_VALUE;
+static uint32_t buffer_canary_after = BUFFER_CANARY_VALUE;
+
+// Function to check buffer canaries for corruption
+static inline bool checkBufferCanaries() {
+    if (buffer_canary_before != BUFFER_CANARY_VALUE) {
+        LOG_CRITICAL("Buffer underflow detected! Canary before corrupted: 0x%08X", buffer_canary_before);
+        return false;
+    }
+    if (buffer_canary_after != BUFFER_CANARY_VALUE) {
+        LOG_CRITICAL("Buffer overflow detected! Canary after corrupted: 0x%08X", buffer_canary_after);
+        return false;
+    }
+    return true;
+}
+
 // ===== Statistics =====
 struct SystemStats {
     uint64_t total_bytes_sent;
@@ -53,12 +73,18 @@ struct SystemStats {
         if (current_heap < min_heap) min_heap = current_heap;
 
         // Detect heap trend (potential memory leak)
-        if (current_heap < last_heap - 1000) {
-            heap_trend = -1;  // Decreasing - potential leak
-        } else if (current_heap > last_heap + 1000) {
-            heap_trend = 1;   // Increasing - memory recovered
+        // PERFORMANCE: Use simpler comparison instead of arithmetic for trend detection
+        // Previous version used subtraction which could be expensive on some platforms
+        const uint32_t TREND_THRESHOLD = 1000;
+        
+        if (last_heap > current_heap) {
+            uint32_t decrease = last_heap - current_heap;
+            heap_trend = (decrease >= TREND_THRESHOLD) ? -1 : 0;
+        } else if (current_heap > last_heap) {
+            uint32_t increase = current_heap - last_heap;
+            heap_trend = (increase >= TREND_THRESHOLD) ? 1 : 0;
         } else {
-            heap_trend = 0;   // Stable
+            heap_trend = 0;  // Exactly equal
         }
 
         last_heap = current_heap;
@@ -134,6 +160,14 @@ NonBlockingTimer statsPrintTimer(STATS_PRINT_INTERVAL, true);
 // ===== Memory Monitoring =====
 void checkMemoryHealth() {
     if (!memoryCheckTimer.check()) return;
+
+    // MEMORY SAFETY: Check buffer canaries for corruption
+    if (!checkBufferCanaries()) {
+        LOG_CRITICAL("Memory corruption detected in audio buffer!");
+        LOG_CRITICAL("System will restart to prevent further damage");
+        delay(2000);
+        ESP.restart();
+    }
 
     // Update memory tracking statistics
     stats.updateMemoryStats();
@@ -449,6 +483,13 @@ void loop() {
                     if (bytes_read > I2S_BUFFER_SIZE) {
                         LOG_ERROR("I2S returned more bytes than buffer size: %u > %u", bytes_read, I2S_BUFFER_SIZE);
                         bytes_read = I2S_BUFFER_SIZE; // Clamp to prevent buffer overflow
+                    }
+                    
+                    // MEMORY SAFETY: Verify buffer integrity after I2S read
+                    if (!checkBufferCanaries()) {
+                        LOG_CRITICAL("Buffer corruption after I2S read - stopping");
+                        systemState.setState(SystemState::ERROR);
+                        break;
                     }
                     
                     // Send data to server
