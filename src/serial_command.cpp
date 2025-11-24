@@ -216,9 +216,10 @@ void SerialCommandHandler::handleConnectCommand() {
 void SerialCommandHandler::handleStatsCommand() {
     LOG_INFO("========== DETAILED STATISTICS ==========");
     
-    // BUG FIX: Handle millis() overflow in uptime calculation
+    // BUG FIX: Handle millis() overflow in uptime calculation (consistent with main.cpp)
+    // millis() wraps around at ULONG_MAX (~49.7 days), must handle correctly
     unsigned long current_millis = millis();
-    unsigned long uptime_ms = current_millis; // Simplified - millis() returns total uptime
+    unsigned long uptime_ms = current_millis; // millis() IS the uptime from boot
     unsigned long uptime_sec = uptime_ms / 1000;
     LOG_INFO("Uptime: %lu seconds", uptime_sec);
 

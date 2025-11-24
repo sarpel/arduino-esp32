@@ -25,9 +25,11 @@ static inline void logger_refill_tokens()
         return;
     }
     
-    // BUG FIX: Handle millis() overflow correctly
-    // When millis() wraps, now < _logger_last_refill_ms
-    // Use unsigned arithmetic which handles wraparound correctly
+    // BUG FIX: Handle millis() overflow correctly using unsigned arithmetic
+    // When millis() wraps around (~49.7 days), now < _logger_last_refill_ms
+    // but unsigned subtraction still gives correct elapsed time:
+    // Example: now=5, last=ULONG_MAX-10 → elapsed = 5 - (ULONG_MAX-10) = 16 (correct!)
+    // This works because unsigned overflow is well-defined in C/C++
     uint32_t elapsed = now - _logger_last_refill_ms;
     
     if (elapsed == 0)

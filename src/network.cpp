@@ -526,13 +526,22 @@ bool NetworkManager::validateConnection()
 {
     // BUG FIX: Add protection against client object being in invalid state
     // WiFiClient::connected() can throw or return inconsistent results if the
-    // underlying socket is corrupted. Wrap in try-catch for safety.
+    // underlying socket is corrupted. We use catch-all (...) here because:
+    // 1. WiFiClient doesn't document specific exception types
+    // 2. Socket corruption can cause various low-level exceptions
+    // 3. We want to survive ANY exception and treat as disconnected
+    // This is safe because we have a well-defined fallback (assume disconnected)
     
     bool is_actually_connected = false;
     try {
         is_actually_connected = client.connected();
+    } catch (const std::exception& e) {
+        LOG_ERROR("Standard exception while checking connection: %s", e.what());
+        is_actually_connected = false;
     } catch (...) {
-        LOG_ERROR("Exception caught while checking client.connected() - assuming disconnected");
+        // Catch any other exception types (non-standard or system exceptions)
+        // This is intentional for maximum robustness with hardware socket layer
+        LOG_ERROR("Unknown exception caught while checking client.connected() - assuming disconnected");
         is_actually_connected = false;
     }
     

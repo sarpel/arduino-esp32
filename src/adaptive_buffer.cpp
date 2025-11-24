@@ -144,19 +144,17 @@ uint8_t AdaptiveBuffer::getEfficiencyScore()
         return 0; // Safety check - avoid division by zero
     }
 
-    // BUG FIX: Prevent overflow in multiplication before division
-    // Use 32-bit arithmetic safely by checking bounds first
-    if (current_buffer_size > (UINT16_MAX / 100)) {
-        // For very large buffers, calculate differently to prevent overflow
-        uint16_t ratio = (current_buffer_size / optimal_size);
-        uint16_t raw_score = ratio * 100;
-        return (raw_score > 100) ? 100 : (uint8_t)raw_score;
-    }
-
-    uint16_t raw_score = (uint16_t)((current_buffer_size * 100) / optimal_size);
-
+    // BUG FIX: Use safe arithmetic to prevent overflow
+    // Both current_buffer_size and optimal_size are size_t (could be large)
+    // Use 64-bit arithmetic to safely compute percentage without overflow
+    uint64_t percentage_64 = ((uint64_t)current_buffer_size * 100ULL) / (uint64_t)optimal_size;
+    
     // Cap at 100 to prevent overflow in uint8_t and to reflect perfection
-    return (raw_score > 100) ? 100 : (uint8_t)raw_score;
+    if (percentage_64 > 100) {
+        return 100;
+    }
+    
+    return (uint8_t)percentage_64;
 }
 
 int32_t AdaptiveBuffer::getLastRSSI()
