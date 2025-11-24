@@ -56,8 +56,7 @@ static inline unsigned long apply_jitter(unsigned long base_ms)
     uint32_t jitter_range = (uint32_t)jitter_range_64;
 
     // Apply random jitter within [-jitter_range, +jitter_range]
-    // BUG FIX: jitter_span = 2*jitter_range + 1, minimum value is 1 (when jitter_range=0)
-    // So jitter_span can never be 0, but we keep defensive check for safety
+    // Note: jitter_span = 2*jitter_range + 1, which has minimum value 1, so no divide-by-zero risk
     uint32_t jitter_span = (2u * jitter_range) + 1u;
     
     int32_t jitter = (int32_t)(r % jitter_span) - (int32_t)jitter_range;
@@ -533,13 +532,10 @@ bool NetworkManager::validateConnection()
     bool is_actually_connected = false;
     try {
         is_actually_connected = client.connected();
-    } catch (const std::exception& e) {
-        LOG_ERROR("Standard exception while checking connection: %s", e.what());
-        is_actually_connected = false;
     } catch (...) {
-        // Catch any other exception types (non-standard or system exceptions)
-        // This is intentional for maximum robustness with hardware socket layer
-        LOG_ERROR("Unknown exception caught while checking client.connected() - assuming disconnected");
+        // Catch-all intentional: WiFiClient socket layer can throw various exception types
+        // including non-standard system exceptions. We handle them all uniformly.
+        LOG_ERROR("Exception caught while checking client.connected() - assuming disconnected");
         is_actually_connected = false;
     }
     

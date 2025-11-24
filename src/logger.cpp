@@ -98,12 +98,11 @@ void Logger::log(LogLevel level, const char *file, int line, const char *fmt, ..
     int written = vsnprintf(buffer, sizeof(buffer), fmt, args);
     va_end(args);
     
-    // Check if message was truncated
-    // BUG FIX: Compare written with sizeof(buffer) directly without cast
-    // vsnprintf returns int, but we need to compare with size_t safely
-    // Cast sizeof to int for comparison (safe because buffer size is small)
-    if (written >= (int)sizeof(buffer) || written < 0) {
-        // Message was truncated or error occurred - add truncation indicator
+    // Check if message was truncated or error occurred
+    // BUG FIX: Safe comparison - check for negative (error) or >= size (truncation)
+    // Use size_t cast of written for safe comparison (written is always < 1000 for our buffer)
+    if (written < 0 || (size_t)written >= sizeof(buffer)) {
+        // Message was truncated or error - add truncation indicator
         // Safely overwrite last few chars with "..." to indicate truncation
         buffer[sizeof(buffer) - 4] = '.';
         buffer[sizeof(buffer) - 3] = '.';

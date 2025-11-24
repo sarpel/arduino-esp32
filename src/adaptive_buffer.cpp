@@ -108,7 +108,16 @@ void AdaptiveBuffer::updateBufferSize(int32_t rssi)
         // BUG FIX: Use safe integer arithmetic to prevent overflow
         // Cast to int64_t to handle potential overflow in intermediate calculations
         int64_t size_diff = (int64_t)new_size - (int64_t)current_buffer_size;
-        int change_pct = (int)((size_diff * 100) / (int64_t)current_buffer_size);
+        int64_t percentage_64 = (size_diff * 100) / (int64_t)current_buffer_size;
+        
+        // BUG FIX: Clamp to int range before cast to prevent undefined behavior
+        // Percentage should never exceed these bounds in practice, but be defensive
+        if (percentage_64 > INT_MAX) {
+            percentage_64 = INT_MAX;
+        } else if (percentage_64 < INT_MIN) {
+            percentage_64 = INT_MIN;
+        }
+        int change_pct = (int)percentage_64;
 
         if (abs(change_pct) >= 10)
         {
